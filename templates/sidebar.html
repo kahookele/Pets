@@ -1,0 +1,126 @@
+<style>
+    .sidebar {
+        height: 100vh;
+        background-color: #EAF0F7; /* Your primary theme color */
+        color: #1A202C; /* Darker default text/icon color for better contrast */
+        width: 50px; /* Collapsed width */
+        padding: 15px 0; /* Vertical padding for the sidebar itself */
+        transition: width 0.25s ease-in-out;
+        overflow-x: hidden;
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        box-sizing: border-box;
+        font-family: "Google Sans", Roboto, Arial, sans-serif; /* Suggesting Google's font stack */
+    }
+
+    .sidebar:hover {
+        width: 260px; /* Increased expanded width */
+        box-shadow: 0px 0px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    .sidebar-hamburger {
+        font-size: 1.8rem; /* Slightly larger icon */
+        color: #1A202C;
+        padding: 10px 18px; /* Align with link horizontal padding */
+        width: 100%;
+        text-align: left;
+        cursor: pointer;
+        user-select: none;
+        margin-bottom: 20px; /* More space below hamburger */
+        box-sizing: border-box;
+    }
+
+    .sidebar ul {
+        list-style-type: none;
+        padding: 0;
+        margin: 0 10px; /* Add some horizontal margin for the list itself when expanded */
+        width: calc(100% - 20px); /* Adjust width considering the margin */
+        display: flex;
+        flex-direction: column;
+        /* Removed flex-grow and justify-content to let links stack from top */
+    }
+
+    .sidebar li {
+        width: 100%;
+        margin-bottom: 5px; /* Space between link items */
+    }
+
+    .sidebar a {
+        color: #1A202C; /* Dark text for links */
+        text-decoration: none;
+        font-size: 0.9rem; /* Google-esque font size */
+        font-weight: 500; /* Medium weight for labels */
+        padding: 10px 15px; /* Padding within each link item */
+        display: flex;
+        align-items: center;
+        justify-content: flex-start; /* MODIFIED: Left-align icon and label */
+        border-radius: 25px; /* Pill shape for hover/active states */
+        white-space: nowrap;
+        overflow: hidden;
+        box-sizing: border-box;
+        transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
+        gap: 18px; /* Increased gap between icon and label */
+    }
+
+    .sidebar a:hover, .sidebar a.active { /* Style for hover and a potential 'active' class */
+        background-color: #A1BAD8; /* White background on hover/active */
+        color: #000000; /* Black text on hover/active for strong contrast */
+    }
+
+    .sidebar .sidebar-icon {
+        min-width: 20px; /* Consistent icon placeholder width */
+        max-width: 20px;
+        display: inline-flex; /* Use flex for better centering if icon is an SVG/Font */
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem; /* Icon size */
+        opacity: 0; /* Icon also fades in */
+        transition: opacity 0.15s ease-in-out;
+    }
+
+    .sidebar:hover .sidebar-icon {
+        opacity: 1;
+        transition-delay: 0.05s; /* Icon appears slightly before label */
+    }
+
+    .sidebar .sidebar-label {
+        opacity: 0;
+        transition: opacity 0.15s ease-in-out;
+        /* transition-delay: 0.05s; /* Label appears slightly after icon */
+    }
+
+    .sidebar:hover .sidebar-label {
+        opacity: 1;
+        transition-delay: 0.1s; /* Label appears with/after icon */
+    }
+
+    /* Styling for when sidebar is collapsed - only show icons */
+    .sidebar:not(:hover) a {
+        justify-content: center; /* Center the icon when collapsed */
+        padding: 12px 0; /* Adjust padding for centered icon */
+    }
+    .sidebar:not(:hover) .sidebar-icon {
+        opacity: 1; /* Ensure icon is visible when collapsed */
+        margin-right: 0; /* No margin needed if label is hidden */
+    }
+    .sidebar:not(:hover) .sidebar-label {
+        display: none; /* Completely hide label when collapsed to prevent layout shifts */
+    }
+
+</style>
+
+<div class="sidebar">
+    <div class="sidebar-hamburger">☰</div>
+    <ul>
+        <li>
+            <a href="{{ url_for('home') }}" class="active"> <span class="sidebar-icon"><i class="bi bi-house-door-fill"></i></span> <span class="sidebar-label">Home</span>
+            </a>
+        </li>
+        <li>
+            <a href="/">
+                <span class="sidebar-icon"><i class="bi bi-person-fill"></i></span> <span class="sidebar-label">Profile</span>
+            </a>
+        </li>
+    </ul>
+ </div>
