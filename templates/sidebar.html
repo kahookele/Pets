@@ -17,6 +17,12 @@
     .sidebar:hover {
         width: 260px; /* Increased expanded width */
         box-shadow: 0px 0px 15px rgba(0, 0, 0, 0.1);
+        color: #1A202C;
+    }
+
+    .sidebar a:hover, .sidebar a.active { /* Style for hover and a potential 'active' class */
+        background-color: #B2C7E0; /* White background on hover/active */
+        color: #000000; /* Black text on hover/active for strong contrast */
     }
 
     .sidebar-hamburger {
@@ -63,11 +69,6 @@
         gap: 18px; /* Increased gap between icon and label */
     }
 
-    .sidebar a:hover, .sidebar a.active { /* Style for hover and a potential 'active' class */
-        background-color: #A1BAD8; /* White background on hover/active */
-        color: #000000; /* Black text on hover/active for strong contrast */
-    }
-
     .sidebar .sidebar-icon {
         min-width: 20px; /* Consistent icon placeholder width */
         max-width: 20px;
@@ -111,16 +112,18 @@
 </style>
 
 <div class="sidebar">
-    <div class="sidebar-hamburger">☰</div>
-    <ul>
+    <div class="sidebar-hamburger">☰</div> <ul>
         <li>
-            <a href="{{ url_for('home') }}" class="active"> <span class="sidebar-icon"><i class="bi bi-house-door-fill"></i></span> <span class="sidebar-label">Home</span>
+            <a href="{{ url_for('home') }}" class="{{ 'active' if active_page == 'home' else '' }}">
+                <span class="sidebar-icon"><i class="bi bi-house-door-fill"></i></span>
+                <span class="sidebar-label">Home</span>
             </a>
         </li>
         <li>
-            <a href="/">
-                <span class="sidebar-icon"><i class="bi bi-person-fill"></i></span> <span class="sidebar-label">Profile</span>
+            <a href="{{ url_for('profile') }}" class="{{ 'active' if active_page == 'profile' else '' }}">
+                <span class="sidebar-icon"><i class="bi bi-person-fill"></i></span>
+                <span class="sidebar-label">Profile</span>
             </a>
         </li>
     </ul>
- </div>
+</div>
