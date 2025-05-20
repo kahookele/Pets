@@ -4,11 +4,32 @@
 
 {% block content %}
 <style>
-
+    .profile-container {
+        max-width: 600px;
+        margin: 40px auto;
+        padding: 20px;
+        background-color: #f7f7f7;
+        border-radius: 10px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .profile-header {
+        text-align: center;
+        margin-bottom: 20px;
+    }
+    .profile-info {
+        font-size: 1.1em;
+    }
+    .profile-info p {
+        margin: 10px 0;
+    }
 </style>
-    <div class="main-content">
-        <h2>Profile Page</h2>
-        <p>Your pets</p>
+
+<div class="profile-container">
+    <div class="profile-header">
+        <h2>{{ user.username }}'s Profile</h2>
+    </div>
+    <div class="profile-info">
+        <p><strong>Bio:</strong> {{ user.bio or 'Yea bitch!' }}</p>
     </div>
 </div>
 {% endblock %}
