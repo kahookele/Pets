@@ -1,60 +1,185 @@
 {% extends "base.html" %}
 
-{% block title %}Profile | Pet App{% endblock %}
+{% block title %}{{ user.username }} | Pet App{% endblock %}
 
 {% block content %}
 <style>
-    .profile-container {
-        max-width: 600px;
-        margin: 40px auto;
-        padding: 20px;
-        background-color: #f7f7f7;
-        border-radius: 10px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    }
-    .profile-image-container {
-        width: 250px; /* Desired width */
-        height: 250px; /* Desired height */
-        margin-bottom: 20px; /* Optional: space below the image */
-        /* If you want the image to be circular, add border-radius here too: */
-        /* border-radius: 50%; */
-        /* overflow: hidden; */ /* Important if using border-radius on the container */
+    .ig-profile-container {
+        max-width: 975px; /* Typical Instagram web content width */
+        margin: 30px auto;
+        padding: 0 20px;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        color: #262626;
+        background-color: #fafafa; /* Instagram-like background */
     }
 
-    .profile-picture {
-        width: 100%; /* Make image fill the container width */
-        height: 100%; /* Make image fill the container height */
-        object-fit: cover; /* This ensures the image covers the 250x250 area without distorting. It might crop parts of the image if the aspect ratio doesn't match. */
-        display: block; /* Removes any extra space below the image if it's an inline element */
-        /* If you want the image itself to be circular (and the container is square): */
-        /* border-radius: 50%; */
+    .ig-profile-header {
+        display: flex;
+        margin-bottom: 44px; /* Space before potential content grid */
+        padding-top: 30px;
     }
-    .profile-header {
-        text-align: center;
+
+    .ig-profile-picture-wrapper {
+        margin-right: 60px; /* Space between pic and info */
+        flex-shrink: 0;
+        width: 150px; /* Instagram desktop profile pic size */
+        height: 150px;
+    }
+
+    .ig-profile-picture-wrapper img {
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 1px solid #dbdbdb; /* Slight border like IG */
+    }
+
+    .ig-profile-info {
+        flex-grow: 1;
+    }
+
+    .ig-info-row1 {
+        display: flex;
+        align-items: center;
         margin-bottom: 20px;
     }
-    .profile-info {
-        font-size: 1.1em;
+
+    .ig-username {
+        font-size: 28px; /* Larger username */
+        font-weight: 300; /* Lighter weight like IG */
+        color: #262626;
+        margin-right: 20px;
     }
-    .profile-info p {
-        margin: 10px 0;
+
+    .ig-action-buttons .btn-ig {
+        text-decoration: none;
+        color: #262626;
+        background-color: transparent;
+        border: 1px solid #dbdbdb;
+        border-radius: 4px;
+        padding: 5px 9px;
+        font-size: 14px;
+        font-weight: 600;
+        margin-right: 8px;
+        cursor: pointer;
     }
+    .ig-action-buttons .btn-ig:hover {
+        background-color: #f0f0f0;
+    }
+    .ig-action-buttons .settings-icon-ig { /* Placeholder for settings cog */
+        font-size: 24px; /* Adjust as needed */
+        cursor: pointer;
+    }
+
+
+    .ig-info-row2-stats {
+        display: flex;
+        margin-bottom: 20px;
+        font-size: 16px;
+    }
+
+    .ig-stat-item {
+        margin-right: 40px;
+    }
+    .ig-stat-item .count {
+        font-weight: 600;
+    }
+
+    .ig-info-row3-details {
+        font-size: 16px;
+    }
+    .ig-fullname {
+        font-weight: 600;
+        margin-bottom: 4px; /* Space between full name and bio */
+    }
+    .ig-bio {
+        line-height: 1.4;
+        white-space: pre-line; /* Respect line breaks in bio */
+    }
+
+    /* Styles for the "Update Profile" form if you decide to integrate it here */
+    .profile-edit-section {
+        margin-top: 40px;
+        padding: 20px;
+        background-color: #fff;
+        border: 1px solid #dbdbdb;
+        border-radius: 3px;
+    }
+    .form-group {
+        margin-bottom: 15px;
+    }
+    .form-group label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: 600;
+    }
+    .form-group input[type="text"],
+    .form-group input[type="file"],
+    .form-group textarea {
+        width: 100%;
+        padding: 8px;
+        border: 1px solid #dbdbdb;
+        border-radius: 3px;
+        box-sizing: border-box;
+    }
+    .form-group textarea {
+        min-height: 80px;
+        resize: vertical;
+    }
+    .submit-btn {
+        padding: 7px 15px;
+        background-color: #3897f0; /* Instagram blue */
+        color: white;
+        border: none;
+        border-radius: 4px;
+        font-weight: 600;
+        cursor: pointer;
+    }
+    .submit-btn:hover {
+        background-color: #2680d9;
+    }
+
 </style>
 
-<div class="profile-container">
-    <div class="profile-image-container">
-        {% if user.profile_image %}
-            <img src="{{ user.profile_image }}" alt="Profile Image" class="profile-picture">
-        {% else %}
-            <img src="https://via.placeholder.com/250" alt="Default Profile Image" class="profile-picture">
-        {% endif %}
-    </div>
-    <div class="profile-header">
-        <h2>{{ user.username }}'s Profile</h2>
-    </div>
-    <div class="profile-info">
-        <p><strong>Bio:</strong> {{ user.bio }}</p>
-        <p><strong>Pet:</strong> {{ user.pet_names }}</p>
-    </div>
+<div class="ig-profile-container">
+    <header class="ig-profile-header">
+        <div class="ig-profile-picture-wrapper">
+            {% if user.profile_image %}
+                <img src="{{ user.profile_image }}" alt="{{ user.username }}'s profile picture">
+            {% else %}
+                <img src="https://via.placeholder.com/150" alt="Default profile picture">
+            {% endif %}
+        </div>
+
+        <section class="ig-profile-info">
+            <div class="ig-info-row1">
+                <h2 class="ig-username">{{ user.username }}</h2>
+                <div class="ig-action-buttons">
+                    <a href="{{ url_for('profile') }}" class="btn-ig">Edit profile</a>
+                    <a href="#" class="btn-ig">View archive</a> <span class="settings-icon-ig"><i class="bi bi-gear-fill"></i></span> </div>
+            </div>
+
+            <ul class="ig-info-row2-stats">
+                <li class="ig-stat-item">
+                    <span class="count">0</span> posts
+                </li>
+                <li class="ig-stat-item">
+                    <span class="count">0</span> followers </li>
+                <li class="ig-stat-item">
+                    <span class="count">0</span> following </li>
+            </ul>
+
+            <div class="ig-info-row3-details">
+                <div class="ig-bio">
+                    {{ user.bio if user.bio else 'No bio yet.' }}
+                    <!-- <br> {{ user.pet_names|join(', ') if user.pet_names }} -->
+                </div>
+            </div>
+        </section>
+    </header>
+
+    <hr style="border: 0; border-top: 1px solid #dbdbdb; margin: 20px 0;">
+    
+
 </div>
 {% endblock %}
