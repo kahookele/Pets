@@ -12,6 +12,23 @@
         border-radius: 10px;
         box-shadow: 0 2px 8px rgba(0,0,0,0.1);
     }
+    .profile-image-container {
+        width: 250px; /* Desired width */
+        height: 250px; /* Desired height */
+        margin-bottom: 20px; /* Optional: space below the image */
+        /* If you want the image to be circular, add border-radius here too: */
+        /* border-radius: 50%; */
+        /* overflow: hidden; */ /* Important if using border-radius on the container */
+    }
+
+    .profile-picture {
+        width: 100%; /* Make image fill the container width */
+        height: 100%; /* Make image fill the container height */
+        object-fit: cover; /* This ensures the image covers the 250x250 area without distorting. It might crop parts of the image if the aspect ratio doesn't match. */
+        display: block; /* Removes any extra space below the image if it's an inline element */
+        /* If you want the image itself to be circular (and the container is square): */
+        /* border-radius: 50%; */
+    }
     .profile-header {
         text-align: center;
         margin-bottom: 20px;
@@ -25,11 +42,19 @@
 </style>
 
 <div class="profile-container">
+    <div class="profile-image-container">
+        {% if user.profile_image %}
+            <img src="{{ user.profile_image }}" alt="Profile Image" class="profile-picture">
+        {% else %}
+            <img src="https://via.placeholder.com/250" alt="Default Profile Image" class="profile-picture">
+        {% endif %}
+    </div>
     <div class="profile-header">
         <h2>{{ user.username }}'s Profile</h2>
     </div>
     <div class="profile-info">
-        <p><strong>Bio:</strong> {{ user.bio or 'Kaa!' }}</p>
+        <p><strong>Bio:</strong> {{ user.bio }}</p>
+        <p><strong>Pet:</strong> {{ user.pet_names }}</p>
     </div>
 </div>
 {% endblock %}
