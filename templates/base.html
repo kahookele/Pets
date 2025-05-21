@@ -11,27 +11,36 @@
         padding: 0;
         height: 100%;
         width: 100%;
+        overflow-x: hidden; /* Prevent horizontal scrollbar if 13% causes slight overflow due to box-sizing issues elsewhere */
       }
       .app-container {
         display: grid;
-        grid-template-columns: auto 1fr;
+        /* Fixed 13% width for sidebar, remaining space for main content */
+        grid-template-columns: 13% 1fr; 
         height: 100vh;
         width: 100vw;
         background: #f9f9f9;
       }
       .sidebar-column {
-        height: 100vh;
+        height: 100vh; /* Ensure sidebar column takes full height */
+        /* The width is determined by the grid-template-columns */
       }
       .main-content {
         padding: 25px;
+        overflow-y: auto; /* Allow main content to scroll if it overflows */
+        height: 100vh; /* Ensure main content can use full height for scrolling */
+        box-sizing: border-box; /* Include padding in height calculation */
       }
+      /* Remove the media query that changed grid-template-columns for smaller screens */
+      /* 
       @media (max-width: 600px) {
         .app-container {
           grid-template-columns: 50px 1fr;
         }
       }
+      */
     </style>
-    <!-- Add your CSS links here if needed -->
+    {% block head_extra %}{% endblock %} <!-- Make sure this is present for page-specific styles -->
 </head>
 <body>
   <div class="app-container">
