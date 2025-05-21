@@ -1,7 +1,7 @@
 import os, datetime
 from flask import (
     Flask, render_template, request, redirect,
-    url_for, session, g, flash
+    url_for, session, flash
 )
 import firebase_admin
 from functools import wraps
@@ -145,7 +145,7 @@ def signup():
             return redirect(url_for('signup'))
         
         if password != confirm_password:
-            flash("Passwords do not match.", "error")
+            flash("Passwords don’t match", "signup_error")
             return redirect(url_for('signup'))
         
         try:

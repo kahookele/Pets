@@ -78,20 +78,74 @@
     }
     a {
         color: #3B82F6; /* Keeping a slightly stronger blue for links for now, or change to #ccdbfd if preferred */
-        /* If you want links to also be #ccdbfd, uncomment the line below and comment out the line above */
-        /* color: #ccdbfd; */
         text-decoration: none;
         font-weight: 500;
     }
     a:hover {
         text-decoration: underline;
     }
+
+    /* --- Styles for Flash Messages --- */
+    .flashes {
+        list-style-type: none;
+        padding: 0;
+        margin: 0 0 20px 0; /* Adjusted margin */
+        width: 100%; /* Ensure it takes full width of container */
+        box-sizing: border-box;
+    }
+    .flashes li {
+        padding: 12px 15px; /* Consistent padding */
+        margin-bottom: 10px;
+        border-radius: 8px; /* Consistent border-radius */
+        font-size: 0.9rem;
+        text-align: center; /* Center text in flash messages */
+        border: 1px solid transparent; /* Base border */
+    }
+    .flashes .message { /* Default category (e.g., from successful signup welcome) */
+        background-color: #e2e3e5;
+        color: #383d41;
+        border-color: #d6d8db;
+    }
+    .flashes .success {
+        background-color: #d4edda;
+        color: #155724;
+        border-color: #c3e6cb;
+    }
+    .flashes .error, .flashes .signup_error { /* Grouping error and your custom signup_error */
+        background-color: #f8d7da;
+        color: #721c24;
+        border-color: #f5c6cb;
+    }
+    .flashes .warning {
+        background-color: #de7266;
+        color: #f2f2f2;
+        border-color: #de7266;
+    }
+    .flashes .info {
+        background-color: #d1ecf1;
+        color: #0c5460;
+        border-color: #bee5eb;
+    }
+    /* --- End Styles for Flash Messages --- */
+
 </style>
 </head>
 <body>
     <div class="container">
+        <!-- Flash Messages Display -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            <ul class="flashes">
+            {% for category, message in messages %}
+              <li class="{{ category }}">{{ message }}</li>
+            {% endfor %}
+            </ul>
+          {% endif %}
+        {% endwith %}
+        <!-- End Flash Messages Display -->
+
         <h2>Login</h2>
-        <form action="{{ url_for('login') }}" method="POST">
+        <form action="{{ url_for('login', next=request.args.get('next')) }}" method="POST">
             <div>
                 <label for="email">Email:</label>
                 <input type="email" id="email" name="email" required>

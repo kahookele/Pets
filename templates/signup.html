@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sign Up</title>
+    <title>Sign Up</title> <!-- Corrected Title -->
     <style>
         /* Your existing styles from signup.html */
         body {
@@ -14,7 +14,7 @@
             justify-content: center;
             min-height: 100vh;
             margin: 0;
-            padding: 20px 0;
+            padding: 20px 0; /* Added padding for very long forms on small screens */
             background-color: #F8F9FA;
             color: #1F2937;
             box-sizing: border-box;
@@ -41,7 +41,7 @@
             font-weight: 500;
             font-size: 0.9rem;
         }
-        input[type="text"],
+        input[type="text"], /* Added for username and pet_names */
         input[type="email"],
         input[type="password"] {
             width: 100%;
@@ -53,7 +53,7 @@
             font-size: 1rem;
             transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
         }
-        input[type="text"]:focus,
+        input[type="text"]:focus, /* Added for username and pet_names */
         input[type="email"]:focus,
         input[type="password"]:focus {
             outline: none;
@@ -76,24 +76,75 @@
         input[type="submit"]:hover {
             background-color: #adc5f9;
         }
-        .message { margin-top: 15px; text-align: center; font-size: 0.9rem; }
-        .error-message { color: red; text-align: center; margin-top:10px; }
+        .message-link { /* Changed class name from .message to avoid conflict */
+             margin-top: 15px;
+             text-align: center;
+             font-size: 0.9rem;
+        }
         a { color: #3B82F6; text-decoration: none; font-weight: 500; }
         a:hover { text-decoration: underline; }
+
+        /* --- Styles for Flash Messages (Copied from login.html solution) --- */
+        .flashes {
+            list-style-type: none;
+            padding: 0;
+            margin: 0 0 20px 0;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .flashes li {
+            padding: 12px 15px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            text-align: center;
+            border: 1px solid transparent;
+        }
+        .flashes .message {
+            background-color: #e2e3e5;
+            color: #383d41;
+            border-color: #d6d8db;
+        }
+        .flashes .success {
+            background-color: #d4edda;
+            color: #155724;
+            border-color: #c3e6cb;
+        }
+        .flashes .error, .flashes .signup_error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border-color: #f5c6cb;
+        }
+        .flashes .warning { /* Using warning style from login.html */
+            background-color: #fff3cd;
+            color: #856404;
+            border-color: #ffeeba;
+        }
+        .flashes .info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border-color: #bee5eb;
+        }
+        /* --- End Styles for Flash Messages --- */
     </style>
 </head>
 <body>
     <div class="container">
-        <h2>Create Account</h2>
+        <!-- Flash Messages Display -->
         {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <p class="message {{ category }}">{{ message }}</p>
-                {% endfor %}
-            {% endif %}
+          {% if messages %}
+            <ul class="flashes">
+            {% for category, message in messages %}
+              <li class="{{ category }}">{{ message }}</li>
+            {% endfor %}
+            </ul>
+          {% endif %}
         {% endwith %}
+        <!-- End Flash Messages Display -->
 
-        <form action="{{ url_for('signup') }}" method="POST">
+        <h2>Create Account</h2> <!-- Corrected Heading -->
+        
+        <form action="{{ url_for('signup') }}" method="POST"> <!-- Corrected form action -->
             <div>
                 <label for="username">Username:</label>
                 <input type="text" id="username" name="username" required>
@@ -116,7 +167,7 @@
             </div>
             <input type="submit" value="Sign Up">
         </form>
-        <div class="message">
+        <div class="message-link"> <!-- Corrected class and link -->
             <p>Already have an account? <a href="{{ url_for('login') }}">Login here</a></p>
         </div>
     </div>
