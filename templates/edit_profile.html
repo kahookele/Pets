@@ -1,0 +1,252 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Profile | Pet App{% endblock %}
+
+{% block content %}
+<style>
+    body {
+        background: #fff !important;
+    }
+    .back-btn {
+        display: inline-block;
+        margin-bottom: 18px;
+        color: #9eb0c7;
+        background: none;
+        font-size: 1rem;
+        font-weight: 600;
+        text-decoration: none;
+        border: none;
+        cursor: pointer;
+        transition: color 0.18s;
+    }
+    .back-btn:hover {
+        color: #1565c0;
+        text-decoration: underline;
+    }
+    .edit-profile-main {
+        max-width: 540px;
+        width: 100%;
+        margin: 32px auto 0 auto;
+        padding: 0 18px 32px 18px;
+    }
+    .edit-profile-header {
+        font-size: 1.7rem;
+        font-weight: bold;
+        margin-bottom: 32px;
+        color: #111;
+    }
+    .profile-section {
+        display: flex;
+        align-items: center;
+        gap: 18px;
+        padding: 20px 22px;
+        background: #F2F2F2;
+        border-radius: 22px;
+        margin-bottom: 32px;
+    }
+    .profile-section img {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        object-fit: cover;
+        background: #eaeaea;
+        border: 2px solid #B2C7E0;
+    }
+    .profile-info {
+        flex: 1;
+    }
+    .profile-info .username {
+        font-size: 1.15rem;
+        font-weight: bold;
+        color: #111;
+    }
+    .profile-info .realname {
+        font-size: 1rem;
+        color: #444;
+    }
+    .change-photo-btn {
+        background: #2196F3;
+        color: #fff;
+        border: none;
+        padding: 8px 18px;
+        font-weight: 500;
+        border-radius: 10px;
+        font-size: 1rem;
+        cursor: pointer;
+        transition: background 0.18s;
+    }
+    .change-photo-btn:hover {
+        background: #1565c0;
+    }
+
+    .edit-profile-form label {
+        font-weight: bold;
+        color: #111;
+        display: block;
+        margin-bottom: 7px;
+        margin-top: 20px;
+        font-size: 1rem;
+    }
+    .edit-profile-form input[type="text"],
+    .edit-profile-form input[type="email"],
+    .edit-profile-form input[type="password"],
+    .edit-profile-form textarea,
+    .edit-profile-form select {
+        width: 100%;
+        background: #F6F6F6;
+        border: 1.7px solid #E4E4E4;
+        border-radius: 14px;
+        padding: 13px 14px;
+        font-size: 1.05rem;
+        color: #111;
+        outline: none;
+        margin-bottom: 3px;
+        box-sizing: border-box;
+        transition: border 0.16s;
+    }
+    .edit-profile-form input:focus,
+    .edit-profile-form textarea:focus,
+    .edit-profile-form select:focus {
+        border-color: #B2C7E0;
+        background: #fff;
+    }
+    .edit-profile-form .input-description {
+        font-size: 0.93rem;
+        color: #888;
+        margin-bottom: 4px;
+    }
+    .edit-profile-form .bio-count {
+        float: right;
+        font-size: 0.92rem;
+        color: #888;
+        margin-top: -24px;
+        margin-bottom: 18px;
+    }
+    .change-password-link-btn {
+    display: block;
+    width: 100%;
+    margin: 26px 0 0 0;
+    text-align: center;
+    background: #B2C7E0;
+    color: #111;
+    font-weight: 600;
+    border: none;
+    border-radius: 10px;
+    padding: 13px 0;
+    font-size: 1.07rem;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background 0.16s, color 0.16s;
+    box-shadow: 0 2px 10px #B2C7E022;
+    }
+    .change-password-link-btn:hover {
+        background: #90b7da;
+        color: #111;
+        text-decoration: none;
+    }
+    .edit-profile-form button[type="submit"] {
+        margin-top: 32px;
+        background: #B2C7E0;
+        color: #111;
+        font-weight: 600;
+        border: none;
+        border-radius: 10px;
+        padding: 13px 0;
+        font-size: 1.1rem;
+        cursor: pointer;
+        width: 100%;
+        transition: background 0.16s;
+        box-shadow: 0 2px 10px #B2C7E022;
+    }
+    .edit-profile-form button[type="submit"]:hover {
+        background: #90b7da;
+    }
+</style>
+
+<a href="{{ url_for('profile') }}" class="back-btn">&larr; Back</a>
+
+<div class="edit-profile-main">
+    <div class="edit-profile-header">Edit profile</div>
+    <div class="profile-section">
+        <img src="{{ user['profile_image'] or 'https://ui-avatars.com/api/?name=' ~ user['username']|urlencode ~ '&background=B2C7E0&color=111' }}" alt="Profile Photo">
+        <div class="profile-info">
+            <div class="username">{{ user['username'] }}</div>
+            <div class="realname">{{ user['real_name'] if user.get('real_name') else '' }}</div>
+        </div>
+        <form method="POST" enctype="multipart/form-data" style="display:inline;">
+            <input type="file" name="profile_image" id="profile_image" style="display:none;" onchange="this.form.submit()">
+            <label for="profile_image" class="change-photo-btn" style="margin-bottom:0;">Change photo</label>
+        </form>
+    </div>
+
+    <form class="edit-profile-form" method="POST" enctype="multipart/form-data">
+
+        <label for="username">Username</label>
+        <input 
+            type="text" 
+            id="username" 
+            name="username" 
+            value="{{ user['username'] if user.get('username') else '' }}"
+            required
+        >
+
+        <label for="bio">Bio</label>
+        <textarea id="bio" name="bio" maxlength="150" rows="2">{{ user['bio'] if user.get('bio') else '' }}</textarea>
+        <div class="bio-count" id="bio-count">
+            {{ (user['bio']|length if user.get('bio') else 0) }}/150
+        </div>
+
+        <label for="email">Email</label>
+<input 
+    type="email" 
+    id="email" 
+    name="email" 
+    value="{{ user['email'] if user.get('email') else '' }}"
+    placeholder="{{ auth_email }}"
+>
+
+        <label>Pet Name(s)</label>
+        <div id="pet-names-list" class="pet-names-container">
+            {% for pet_name in user['pet_names']|default([]) %}
+                <input type="text" name="pet_names" value="{{ pet_name }}" placeholder="Pet Name {{ loop.index }}">
+                {% if loop.length > 1 %}
+                <button type="button" class="remove-pet-btn" onclick="removePetNameField(this)">–</button>
+                {% endif %}
+            {% endfor %}
+            <button type="button" class="add-pet-btn" onclick="addPetNameField()">Add</button>
+        </div>
+
+        <a href="{{ url_for('edit_password') }}" class="change-password-link-btn">Change Password</a>
+
+        <button type="submit">Save</button>
+    </form>
+</div>
+
+<script>
+    // Optional: live character counter for bio
+    const bio = document.getElementById('bio');
+    const bioCount = document.getElementById('bio-count');
+    if (bio && bioCount) {
+        bio.addEventListener('input', function() {
+            bioCount.textContent = bio.value.length + "/150";
+        });
+    }
+
+    // JS for dynamic add/remove pet names
+    function addPetNameField() {
+        const container = document.getElementById('pet-names-list');
+        const input = document.createElement('input');
+        input.type = "text";
+        input.name = "pet_names";
+        input.placeholder = "Pet Name";
+        input.className = "pet-name-input";
+        container.insertBefore(input, container.lastElementChild);
+    }
+
+    function removePetNameField(btn) {
+        const input = btn.previousElementSibling;
+        btn.remove();
+        input.remove();
+    }
+</script>
+{% endblock %}

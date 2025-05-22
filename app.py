@@ -5,12 +5,16 @@ from flask import (
 )
 import firebase_admin
 from functools import wraps
-from firebase_admin import credentials, firestore, auth
+from firebase_admin import credentials, firestore, auth, storage
+import uuid
 import requests
 
 cred = credentials.Certificate("serviceAccountKey.json")
-firebase_admin.initialize_app(cred)
+firebase_admin.initialize_app(cred, {
+    'storageBucket': 'your-project-id.appspot.com'
+})
 db_firestore = firestore.client()
+bucket = storage.bucket()
 
 
 app = Flask(__name__)
@@ -54,6 +58,79 @@ def profile():
     except Exception as e:
         flash(f"Error fetching profile: {e}", "error")
         return redirect(url_for('login'))
+    
+
+@app.route('/edit_profile', methods=['GET', 'POST'])
+@login_required
+def edit_profile():
+    user_uid = session.get('user_uid')
+    user_ref = db_firestore.collection('users').document(user_uid)
+    user_data = user_ref.get().to_dict()
+
+    # Fetch the Auth email
+    auth_user = auth.get_user(user_uid)
+    auth_email = auth_user.email
+    
+    if request.method == 'POST':
+        username = request.form.get('username')
+        bio = request.form.get('bio')
+        pet_names = request.form.get('pet_name')
+        email = request.form.get('email')
+        pet_names = request.form.getlist('pet_names')
+
+        # Handle profile image upload
+        file = request.files.get('profile_image')
+        profile_image_url = user_data.get('profile_image', "")
+
+        if file and file.filename:
+            blob = bucket.blob(f'profile_images/{str(uuid.uuid4())}_{file.filename}')
+            blob.upload_from_file(file, content_type=file.content_type)
+            profile_image_url = blob.generate_signed_url(expiration=3600*24*365*10)  # 10 years
+
+        # Update Auth email (Firebase Admin SDK)
+        try:
+            auth.update_user(user_uid, email=email)
+        except Exception as e:
+            flash(f"Error updating email: {str(e)}", "danger")
+            return render_template('edit_profile.html', user=user_data)
+
+        # Update Firestore document
+        user_ref.update({
+            'username': username,
+            'bio': bio,
+            'pet_names': pet_names,
+            'email': email,
+            'profile_image': profile_image_url
+        })
+        flash('Profile updated successfully!')
+        return redirect(url_for('edit_profile'))
+    
+    return render_template('edit_profile.html', user=user_data, auth_email=auth_email)
+
+
+@app.route('/edit_password', methods=['GET', 'POST'])
+@login_required
+def edit_password():
+    if request.method == 'POST':
+        user_uid = session.get('user_uid')
+        new_password = request.form.get('new_password')
+        confirm_password = request.form.get('confirm_password')
+
+        if not new_password or not confirm_password:
+            flash("Please fill out both fields.", "danger")
+        elif new_password != confirm_password:
+            flash("Passwords do not match.", "danger")
+        elif len(new_password) < 6:
+            flash("Password must be at least 6 characters.", "danger")
+        else:
+            try:
+                auth.update_user(user_uid, password=new_password)
+                flash("Password updated successfully!", "success")
+                return redirect(url_for('edit_profile'))
+            except Exception as e:
+                flash(f"Error updating password: {str(e)}", "danger")
+    
+    return render_template('edit_password.html')
     
 
 @app.route('/logout')
