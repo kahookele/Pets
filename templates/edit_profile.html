@@ -7,6 +7,32 @@
     body {
         background: #fff !important;
     }
+    .custom-alert-floating {
+        position: fixed;
+        top: 32px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 9999;
+        display: flex;
+        align-items: center;
+        background-color: #d1e7dd;
+        color: #0f5132;
+        border: 1px solid #badbcc;
+        border-radius: 8px;
+        padding: 12px 24px;
+        font-size: 1rem;
+        box-shadow: 0 4px 24px rgba(0,0,0,0.15);
+        min-width: 240px;
+        max-width: 400px;
+        animation: fadeInDown 0.4s;
+    }
+    .alert-icon {
+        margin-right: 12px;
+    }
+    @keyframes fadeInDown {
+        from { opacity: 0; transform: translateY(-40px) translateX(-50%);}
+        to { opacity: 1; transform: translateY(0) translateX(-50%);}
+    }
     .back-btn {
         display: inline-block;
         margin-bottom: 18px;
@@ -163,6 +189,20 @@
     }
 </style>
 
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    {% for category, message in messages %}
+      <div class="custom-alert-floating" role="alert">
+        <svg class="alert-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" height="24" width="24">
+          <circle cx="12" cy="12" r="12" fill="#d1e7dd"/>
+          <path d="M17 9l-5.5 5.5L7 10" stroke="#198754" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        {{ message }}
+      </div>
+    {% endfor %}
+  {% endif %}
+{% endwith %}
+
 <a href="{{ url_for('profile') }}" class="back-btn">&larr; Back</a>
 
 <div class="edit-profile-main">
@@ -223,6 +263,11 @@
 </div>
 
 <script>
+    setTimeout(function() {
+        const alert = document.querySelector('.custom-alert-floating');
+        if(alert) alert.style.display = 'none';
+    }, 3000);
+
     // Optional: live character counter for bio
     const bio = document.getElementById('bio');
     const bioCount = document.getElementById('bio-count');

@@ -8,6 +8,7 @@ from functools import wraps
 from firebase_admin import credentials, firestore, auth, storage
 import uuid
 import requests
+from datetime import timedelta
 
 cred = credentials.Certificate("serviceAccountKey.json")
 firebase_admin.initialize_app(cred, {
@@ -23,6 +24,8 @@ app.secret_key = 'lksdfsdfkjfneofweofskf9204392358342' # might need to change la
 
 FIREBASE_WEB_API_KEY = "AIzaSyDnMJOweajBQaCJ3MzJKomF-xYyYJJKkaU"
 FIREBASE_AUTH_SIGN_IN_URL = f"https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key={FIREBASE_WEB_API_KEY}"
+
+app.permanent_session_lifetime = timedelta(days=30)  # Users stay logged in for 30 days
 
 
 def login_required(f):
@@ -154,6 +157,7 @@ def logout():
     session.pop('user_uid', None)
     session.pop('user_email', None)
     session.pop('display_name', None)
+    session.clear()
 
     flash("You have been successfully logged out.", "info")
     return redirect(url_for('login'))
@@ -194,7 +198,10 @@ def login():
                 session['user_email'] = user_email
                 session['display_name'] = display_name # Store display name in session
 
-                flash(f"Welcome back, {display_name}!", "success")
+                if 'remember_me' in request.form:
+                    session.permanent = True
+                else:
+                    session.permanent = False
                 
                 next_url = request.args.get('next')
                 if next_url:

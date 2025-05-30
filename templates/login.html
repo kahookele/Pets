@@ -148,11 +148,14 @@
         <form action="{{ url_for('login', next=request.args.get('next')) }}" method="POST">
             <div>
                 <label for="email">Email:</label>
-                <input type="email" id="email" name="email" required>
+                <input type="email" id="email" name="email" required autocomplete="email">
             </div>
             <div>
                 <label for="password">Password:</label>
-                <input type="password" id="password" name="password" required>
+                <input type="password" id="password" name="password" required autocomplete="username">
+            </div>
+            <div>
+                <label><input type="checkbox" name="remember_me"> Remember Me</label>
             </div>
             <input type="submit" value="Login">
         </form>
