@@ -111,6 +111,12 @@
                 <span class="sidebar-label">Profile</span>
             </a>
         </li>
+        <li>
+            <a href="{{ url_for('profile') }}" class="{{ 'active' if active_page == 'profile' else '' }}">
+                <span class="sidebar-icon"><i class="bi bi-chat-dots-fill"></i></span>
+                <span class="sidebar-label">Messages</span>
+            </a>
+        </li>
         <!-- Dog item now comes BEFORE Logout -->
         <li class="sidebar-dog-item">
             {% include 'kaa.html' %}
