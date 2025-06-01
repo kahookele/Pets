@@ -1,50 +1,43 @@
 <style>
-    /* :root CSS variables are now defined in base.html's style for broader scope */
-    /* Or, if you prefer, keep them here and ensure they are loaded first or scoped properly */
+    /* CSS variables from :root in base.html are available here */
 
     .sidebar {
-        height: 100vh;
-        background-color: #EAF0F7;
-        color: #1A202C;
-        /* The .sidebar div takes 100% width of its parent .sidebar-column.
-           The .sidebar-column is 13% of viewport width as per base.html.
-           We will change the 'width' of .sidebar itself to achieve the narrow effect
-           WITHOUT changing the grid column width in base.html initially. */
-        width: 100%; /* Default: takes full width of its column */
-        /* For actual shrinking effect, we'll add a '.narrow' class to .sidebar
-           that sets a fixed pixel width like var(--sidebar-actual-width-narrow) */
+        height: 100%; /* Fills the .sidebar-column which has the 100vh and border */
+        background-color: var(--main-bg-color); 
+        color: var(--primary-text-color); 
+        width: 100%; 
         padding: 20px 10px 15px 10px;
-        position: relative; /* Or 'absolute' if needed within its column for specific effects */
+        position: relative; 
         display: flex;
         flex-direction: column;
         box-sizing: border-box;
-        font-family: "Google Sans", Roboto, Arial, sans-serif;
-        transition: width 0.35s ease-in-out; /* Transition for the .sidebar's own width */
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; 
+        transition: width 0.35s ease-in-out; 
     }
 
     /* Narrow state for the main .sidebar div */
     .sidebar.narrow {
-        width: var(--sidebar-actual-width-narrow) !important; /* Override 100% to shrink */
+        width: var(--sidebar-actual-width-narrow) !important; 
     }
     .sidebar.narrow .sidebar-label {
         opacity: 0;
         max-width: 0;
         font-size: 0;
         overflow: hidden;
-        margin-left: -10px; /* May need adjustment */
+        margin-left: -10px; 
         padding: 0;
         white-space: normal;
     }
-    .sidebar.narrow .sidebar-title { /* How the title adapts */
-        font-size: 1rem; /* Smaller title */
+    .sidebar.narrow .sidebar-title { 
+        font-size: 1rem; 
         padding: 0 5px 10px 5px;
         margin-bottom: 15px;
-        opacity: 0; /* Hide title in narrow mode */
+        opacity: 0; 
         max-height: 0;
         overflow: hidden;
     }
-    .sidebar.narrow a#searchIconToggle, /* Keep search icon centered */
-    .sidebar.narrow li a { /* Center all icons in narrow mode */
+    .sidebar.narrow a#searchIconToggle, 
+    .sidebar.narrow li a { 
         justify-content: center;
         gap: 0;
         padding-left: 5px;
@@ -57,17 +50,10 @@
         padding:0; margin:0;
     }
 
-
-    .sidebar a:hover, .sidebar a.active {
-        background-color: #B2C7E0;
-        color: #000000;
-    }
-
     .sidebar-title {
-        font-family: 'Brush Script MT', 'Brush Script Std', 'Lucida Calligraphy', cursive;
-        font-size: 2.2rem;
-        font-weight: bold;
-        color: #2D3748;
+        font-size: 1.8rem; 
+        font-weight: 600; 
+        color: var(--primary-text-color); 
         padding: 0 5px 10px 5px;
         width: 100%;
         text-align: center;
@@ -94,7 +80,7 @@
     }
 
     .sidebar a {
-        color: #1A202C;
+        color: var(--primary-text-color); /* Default text color for sidebar items */
         text-decoration: none;
         font-size: 0.9rem;
         font-weight: 500;
@@ -102,15 +88,35 @@
         display: flex;
         align-items: center;
         justify-content: flex-start;
-        border-radius: 25px;
-        /* white-space: nowrap; -- Removed */
-        overflow: hidden; /* Keeps content like icons from breaking out of 'a' during transitions */
+        border-radius: 25px; 
+        overflow: hidden; 
         text-overflow: ellipsis;
         box-sizing: border-box;
         transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out, padding 0.35s ease-in-out, gap 0.35s ease-in-out, justify-content 0.35s ease-in-out;
         gap: 12px;
         cursor: pointer;
     }
+
+    .sidebar a:hover {
+        background-color: var(--general-hover-bg-color); /* Light gray background on hover */
+        color: var(--hover-text-color); /* Primary text color on hover */
+    }
+    
+    .sidebar a.active {
+        background-color: var(--active-selection-bg-color); /* Light gray background for active item */
+        color: var(--active-selection-text-color); /* Blue text for active item for emphasis */
+        font-weight: 600; /* Slightly bolder for active item */
+    }
+    
+    /* Ensure icons in active links also adopt the active text color */
+    .sidebar a.active .sidebar-icon {
+        color: var(--active-selection-text-color);
+    }
+    /* Ensure icons in hovered links adopt the hover text color */
+    .sidebar a:hover .sidebar-icon {
+        color: var(--hover-text-color);
+    }
+
 
     .sidebar .sidebar-icon {
         min-width: 20px;
@@ -121,19 +127,14 @@
         font-size: 1.25rem;
         opacity: 1;
         flex-shrink: 0; 
+        transition: color 0.2s ease-in-out; /* Smooth color transition for icons */
     }
 
     .sidebar .sidebar-label {
         opacity: 1;
-        /* overflow: hidden; -- Handled by parent 'a' */
-        /* text-overflow: ellipsis; -- Handled by parent 'a' */
-        /* white-space: nowrap; -- Removed */
-        transition: opacity 0.3s ease-in-out 0.05s, max-width 0.3s ease-in-out, font-size 0.3s ease-in-out; /* Added small delay to opacity for label */
+        transition: opacity 0.3s ease-in-out 0.05s, max-width 0.3s ease-in-out, font-size 0.3s ease-in-out; 
     }
     
-    /* Removed CSS for .search-item-container, #searchToggleLabel hiding, #searchArea */
-    /* Highlighting for the search icon toggle is handled by .sidebar a.active */
-
     .sidebar-dog-item {
         margin-top: auto;
         margin-bottom: 0;
@@ -142,6 +143,12 @@
         align-items: flex-end;
         padding-bottom: 10px;
         transition: opacity 0.3s ease-in-out, max-height 0.3s ease-in-out, padding 0.3s ease-in-out, margin 0.3s ease-in-out;
+    }
+    
+    /* Styles for notification badge */
+    .sidebar .badge.bg-danger {
+        background-color: var(--link-color) !important; 
+        color: var(--main-bg-color) !important; 
     }
 
 </style>
@@ -195,34 +202,31 @@
 </div>
 
 <script>
-  // Ensure this script runs after the DOM is fully loaded, or move to bottom of base.html
+  // Ensure this script runs after the DOM is fully loaded
   document.addEventListener('DOMContentLoaded', function() {
-    const mainSidebar = document.getElementById('mainSidebar'); // The .sidebar div
-    const searchIconToggle = document.getElementById('searchIconToggle'); // The <a> tag for search icon in main sidebar
-    const searchPanel = document.getElementById('searchPanel');     // The new external search panel
-    const panelSearchInput = document.getElementById('panelSearchInput'); // Input in the new panel
-    const liveResultsListPanel = document.getElementById('resultsListPanel'); // UL for results in the new panel
-
-    // const appContainer = document.querySelector('.app-container'); // If you need to change grid columns
+    const mainSidebar = document.getElementById('mainSidebar'); 
+    const searchIconToggle = document.getElementById('searchIconToggle'); 
+    const searchPanel = document.getElementById('searchPanel');     
+    const panelSearchInput = document.getElementById('panelSearchInput'); 
+    const liveResultsListPanel = document.getElementById('resultsListPanel'); // Ensure this ID matches the UL in base.html
 
     function openSearchPanel() {
         if (mainSidebar) mainSidebar.classList.add('narrow');
         if (searchPanel) searchPanel.classList.add('active');
-        if (searchIconToggle) searchIconToggle.classList.add('active'); // Highlight icon
-        // if (appContainer) appContainer.classList.add('sidebar-narrow-active'); // If changing grid
+        // The .active class on searchIconToggle will now pick up the sidebar's <a>.active styles
+        if (searchIconToggle) searchIconToggle.classList.add('active'); 
         if (panelSearchInput) panelSearchInput.focus();
     }
 
     function closeSearchPanel() {
         if (mainSidebar) mainSidebar.classList.remove('narrow');
         if (searchPanel) searchPanel.classList.remove('active');
-        if (searchIconToggle) searchIconToggle.classList.remove('active'); // Remove highlight
-        // if (appContainer) appContainer.classList.remove('sidebar-narrow-active'); // If changing grid
+        if (searchIconToggle) searchIconToggle.classList.remove('active'); 
     }
 
     if (searchIconToggle) {
         searchIconToggle.addEventListener('click', function (event) {
-            event.stopPropagation();
+            event.stopPropagation(); // Prevent click from bubbling to document
             if (searchPanel && searchPanel.classList.contains('active')) {
                 closeSearchPanel();
             } else {
@@ -231,10 +235,11 @@
         });
     }
 
+    // Close search panel if clicking outside of it
     document.addEventListener('click', function(event) {
         if (searchPanel && searchPanel.classList.contains('active')) { 
             const isClickInsideSearchPanel = searchPanel.contains(event.target);
-            // Check if mainSidebar exists before trying to check if it contains the target
+            // Check if the click was on the toggle button itself (or its children)
             const isClickOnSearchIconToggle = searchIconToggle ? searchIconToggle.contains(event.target) : false;
 
             if (!isClickInsideSearchPanel && !isClickOnSearchIconToggle) {
@@ -243,18 +248,19 @@
         }
     });
 
+    // Live search functionality (assuming your backend /search_users endpoint exists)
     if (panelSearchInput) {
         panelSearchInput.addEventListener('input', function () {
             const query = this.value;
-            const recentsContainer = document.querySelector('.search-panel-recents');
+            const recentsContainer = document.querySelector('.search-panel-recents'); // From base.html
             
-            if (liveResultsListPanel) { // Check if the element exists
-                if (query.length < 2) {
+            if (liveResultsListPanel) { 
+                if (query.length < 2) { // Only search if query is at least 2 chars
                     liveResultsListPanel.innerHTML = '';
-                    if(recentsContainer) recentsContainer.style.display = 'block';
+                    if(recentsContainer) recentsContainer.style.display = 'block'; // Show recents
                     return; 
                 }
-                if(recentsContainer) recentsContainer.style.display = 'none';
+                if(recentsContainer) recentsContainer.style.display = 'none'; // Hide recents when typing
 
                 fetch(`/search_users?q=${encodeURIComponent(query)}`)
                   .then(res => {
@@ -262,10 +268,12 @@
                     return res.json();
                   })
                   .then(data => {
-                    liveResultsListPanel.innerHTML = '';
+                    liveResultsListPanel.innerHTML = ''; // Clear previous results
                     data.forEach(user => {
                       const listItem = document.createElement('li');
-                      listItem.textContent = user.username;
+                      listItem.textContent = user.username; // Adjust if your user object has different properties
+                      // Add click handler to go to user profile or similar
+                      // listItem.onclick = () => { window.location.href = `/user/${user.username}`; };
                       liveResultsListPanel.appendChild(listItem);
                     });
                   })
@@ -277,21 +285,25 @@
         });
     }
 
+    // Clear recents button functionality (assuming structure from base.html)
     const clearRecentsButton = document.getElementById('clearRecentsButton');
     if(clearRecentsButton) {
         clearRecentsButton.addEventListener('click', function() {
-            const recentSearchesList = document.getElementById('recentSearchesList');
+            const recentSearchesList = document.getElementById('recentSearchesList'); // From base.html
             if (recentSearchesList) recentSearchesList.innerHTML = '<li>Recent searches cleared.</li>';
+            // Add logic here to actually clear them from storage if needed
         });
     }
     
-    const recentRemoveButtons = document.querySelectorAll('.recent-remove');
-    if (recentRemoveButtons) {
-        recentRemoveButtons.forEach(button => {
-            button.addEventListener('click', function(event) {
+    // Remove individual recent search item (assuming structure from base.html)
+    const recentSearchesList = document.getElementById('recentSearchesList');
+    if (recentSearchesList) {
+        recentSearchesList.addEventListener('click', function(event) {
+            if (event.target && event.target.classList.contains('recent-remove')) {
                 event.stopPropagation(); 
-                this.closest('li').remove();
-            });
+                event.target.closest('li').remove();
+                // Add logic here to remove from storage if needed
+            }
         });
     }
   });
