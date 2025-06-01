@@ -1,6 +1,6 @@
 from flask import (
     Flask, render_template, request, redirect,
-    url_for, session, flash
+    url_for, session, flash, jsonify
 )
 import firebase_admin
 from functools import wraps
@@ -311,6 +311,30 @@ def signup():
 
     # For GET request, just render the signup page
     return render_template("signup.html", active_page='signup')
+
+
+@app.route('/search_users', methods=['GET'])
+def search_users():
+    query = request.args.get('q', '').lower()
+
+    if not query:
+        return jsonify([])
+
+    users_ref = db_firestore.collection('users')
+    users = users_ref.stream()
+
+    results = []
+    for user in users:
+        data = user.to_dict()
+        username = data.get('username', '').lower()
+        if query in username:
+            results.append({
+                'id': user.id,
+                'username': data.get('username'),
+                'profile_pic': data.get('profile_pic_url', '')  # optional
+            })
+
+    return jsonify(results)
 
 
 @app.route('/direct_messages/<conversation_id>', methods=['GET', 'POST'])

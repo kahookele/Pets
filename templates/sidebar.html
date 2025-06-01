@@ -1,16 +1,62 @@
 <style>
+    /* :root CSS variables are now defined in base.html's style for broader scope */
+    /* Or, if you prefer, keep them here and ensure they are loaded first or scoped properly */
+
     .sidebar {
         height: 100vh;
-        background-color: #EAF0F7; /* Your primary theme color */
-        color: #1A202C; /* Darker default text/icon color */
-        width: 100%; /* Sidebar div takes 100% of its parent (.sidebar-column which is 13vw) */
-        padding: 20px 10px 15px 10px; /* Increased top padding, then horizontal, then bottom */
-        position: relative;
+        background-color: #EAF0F7;
+        color: #1A202C;
+        /* The .sidebar div takes 100% width of its parent .sidebar-column.
+           The .sidebar-column is 13% of viewport width as per base.html.
+           We will change the 'width' of .sidebar itself to achieve the narrow effect
+           WITHOUT changing the grid column width in base.html initially. */
+        width: 100%; /* Default: takes full width of its column */
+        /* For actual shrinking effect, we'll add a '.narrow' class to .sidebar
+           that sets a fixed pixel width like var(--sidebar-actual-width-narrow) */
+        padding: 20px 10px 15px 10px;
+        position: relative; /* Or 'absolute' if needed within its column for specific effects */
         display: flex;
         flex-direction: column;
         box-sizing: border-box;
         font-family: "Google Sans", Roboto, Arial, sans-serif;
+        transition: width 0.35s ease-in-out; /* Transition for the .sidebar's own width */
     }
+
+    /* Narrow state for the main .sidebar div */
+    .sidebar.narrow {
+        width: var(--sidebar-actual-width-narrow) !important; /* Override 100% to shrink */
+    }
+    .sidebar.narrow .sidebar-label {
+        opacity: 0;
+        max-width: 0;
+        font-size: 0;
+        overflow: hidden;
+        margin-left: -10px; /* May need adjustment */
+        padding: 0;
+        white-space: normal;
+    }
+    .sidebar.narrow .sidebar-title { /* How the title adapts */
+        font-size: 1rem; /* Smaller title */
+        padding: 0 5px 10px 5px;
+        margin-bottom: 15px;
+        opacity: 0; /* Hide title in narrow mode */
+        max-height: 0;
+        overflow: hidden;
+    }
+    .sidebar.narrow a#searchIconToggle, /* Keep search icon centered */
+    .sidebar.narrow li a { /* Center all icons in narrow mode */
+        justify-content: center;
+        gap: 0;
+        padding-left: 5px;
+        padding-right: 5px;
+    }
+     .sidebar.narrow .sidebar-dog-item {
+        opacity: 0;
+        max-height: 0;
+        overflow: hidden;
+        padding:0; margin:0;
+    }
+
 
     .sidebar a:hover, .sidebar a.active {
         background-color: #B2C7E0;
@@ -18,32 +64,33 @@
     }
 
     .sidebar-title {
-        font-family: 'Brush Script MT', 'Brush Script Std', 'Lucida Calligraphy', cursive; /* Cursive font stack */
-        font-size: 2.2rem; /* Adjusted font size for "Pets" */
-        font-weight: bold; /* Make it a bit bolder if the cursive font is thin */
-        color: #2D3748; /* A slightly softer, rich dark blue/gray */
-        padding: 0 5px 10px 5px; /* Padding around the text, less top padding as sidebar has more */
+        font-family: 'Brush Script MT', 'Brush Script Std', 'Lucida Calligraphy', cursive;
+        font-size: 2.2rem;
+        font-weight: bold;
+        color: #2D3748;
+        padding: 0 5px 10px 5px;
         width: 100%;
-        text-align: center; /* Center the text */
+        text-align: center;
         user-select: none;
-        margin-bottom: 25px; /* Space below the title before links */
+        margin-bottom: 25px;
         box-sizing: border-box;
-        line-height: 1.1; /* Adjust line height for cursive font if needed */
+        line-height: 1.1;
+        transition: font-size 0.35s ease-in-out, padding 0.35s ease-in-out, margin-bottom 0.35s ease-in-out, opacity 0.3s ease-in-out, max-height 0.3s ease-in-out;
     }
 
     .sidebar ul {
         list-style-type: none;
         padding: 0;
-        margin: 0; /* List takes full width of padded sidebar */
+        margin: 0;
         width: 100%;
         display: flex;
         flex-direction: column;
-        flex-grow: 1; /* ADD THIS: Allows the ul to take available vertical space */
+        flex-grow: 1;
     }
 
     .sidebar li {
         width: 100%;
-        margin-bottom: 5px; /* This will apply to all li including the dog's one before margin-top:auto */
+        margin-bottom: 5px;
     }
 
     .sidebar a {
@@ -51,17 +98,18 @@
         text-decoration: none;
         font-size: 0.9rem;
         font-weight: 500;
-        padding: 10px 15px; /* Padding within each link item */
+        padding: 10px 15px;
         display: flex;
         align-items: center;
         justify-content: flex-start;
         border-radius: 25px;
-        white-space: nowrap;
-        overflow: hidden;
+        /* white-space: nowrap; -- Removed */
+        overflow: hidden; /* Keeps content like icons from breaking out of 'a' during transitions */
         text-overflow: ellipsis;
         box-sizing: border-box;
-        transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
+        transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out, padding 0.35s ease-in-out, gap 0.35s ease-in-out, justify-content 0.35s ease-in-out;
         gap: 12px;
+        cursor: pointer;
     }
 
     .sidebar .sidebar-icon {
@@ -72,32 +120,33 @@
         justify-content: center;
         font-size: 1.25rem;
         opacity: 1;
+        flex-shrink: 0; 
     }
 
     .sidebar .sidebar-label {
         opacity: 1;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
+        /* overflow: hidden; -- Handled by parent 'a' */
+        /* text-overflow: ellipsis; -- Handled by parent 'a' */
+        /* white-space: nowrap; -- Removed */
+        transition: opacity 0.3s ease-in-out 0.05s, max-width 0.3s ease-in-out, font-size 0.3s ease-in-out; /* Added small delay to opacity for label */
     }
+    
+    /* Removed CSS for .search-item-container, #searchToggleLabel hiding, #searchArea */
+    /* Highlighting for the search icon toggle is handled by .sidebar a.active */
 
-    /* --- NEW CSS FOR THE DOG ITEM --- */
     .sidebar-dog-item {
-        margin-top: auto; /* This is the key: pushes this item to the bottom */
-        margin-bottom: 0; /* Override the general li margin-bottom if needed for closer fit */
-        display: flex; /* To help control the dog's alignment within the li */
-        justify-content: center; /* Center the dog's container horizontally */
-        align-items: flex-end; /* Align the dog's container to the bottom of the li */
-        padding-bottom: 10px; /* Add some space below the dog */
-        /* If dog.html's outermost container has fixed width, this li will center it. */
-        /* You might need to adjust dog.html styles if it's too wide for the sidebar. */
+        margin-top: auto;
+        margin-bottom: 0;
+        display: flex;
+        justify-content: center;
+        align-items: flex-end;
+        padding-bottom: 10px;
+        transition: opacity 0.3s ease-in-out, max-height 0.3s ease-in-out, padding 0.3s ease-in-out, margin 0.3s ease-in-out;
     }
-    /* --- END NEW CSS --- */
 
 </style>
 
-<div class="sidebar">
-    <div class="sidebar-title">Pets</div>
+<div class="sidebar" id="mainSidebar"> <div class="sidebar-title">Pets</div>
     <ul>
         <li>
             <a href="{{ url_for('home') }}" class="{{ 'active' if active_page == 'home' else '' }}">
@@ -105,20 +154,24 @@
                 <span class="sidebar-label">Home</span>
             </a>
         </li>
+
+        <li class="search-toggle-item"> <a id="searchIconToggle"> <span class="sidebar-icon"><i class="bi bi-search"></i></span>
+                <span class="sidebar-label" id="searchIconToggleLabel">Search</span> </a>
+            </li>
+
         <li>
             <a href="{{ url_for('profile') }}" class="{{ 'active' if active_page == 'profile' else '' }}">
                 <span class="sidebar-icon"><i class="fas fa-paw"></i></span>
                 <span class="sidebar-label">Profile</span>
             </a>
         </li>
-        <li> {# Removed class="nav-item" to match other li elements #}
-            <a href="{{ url_for('notifications_page') }}" class="{{ 'active' if active_page == 'notifications' else '' }}"> {# Adjusted class attribute #}
+        <li>
+            <a href="{{ url_for('notifications_page') }}" class="{{ 'active' if active_page == 'notifications' else '' }}">
                 <span class="sidebar-icon"><i class="bi bi-hearts"></i></span>
                 <span class="sidebar-label">
                     Notifications
                     {% if unread_notification_count > 0 %}
-                        {# Added ms-1 for a little space if you're using Bootstrap spacing utilities #}
-                        <span class="badge bg-danger ms-1">{{ unread_notification_count }}</span> 
+                        <span class="badge bg-danger ms-1">{{ unread_notification_count }}</span>
                     {% endif %}
                 </span>
             </a>
@@ -129,11 +182,9 @@
                 <span class="sidebar-label">Messages</span>
             </a>
         </li>
-        <!-- Dog item now comes BEFORE Logout -->
         <li class="sidebar-dog-item">
             {% include 'kaa.html' %}
         </li>
-        <!-- Logout item now comes AFTER Dog -->
         <li>
             <a href="{{ url_for('logout') }}">
                 <span class="sidebar-icon"><i class="bi bi-box-arrow-right"></i></span>
@@ -142,3 +193,106 @@
         </li>
     </ul>
 </div>
+
+<script>
+  // Ensure this script runs after the DOM is fully loaded, or move to bottom of base.html
+  document.addEventListener('DOMContentLoaded', function() {
+    const mainSidebar = document.getElementById('mainSidebar'); // The .sidebar div
+    const searchIconToggle = document.getElementById('searchIconToggle'); // The <a> tag for search icon in main sidebar
+    const searchPanel = document.getElementById('searchPanel');     // The new external search panel
+    const panelSearchInput = document.getElementById('panelSearchInput'); // Input in the new panel
+    const liveResultsListPanel = document.getElementById('resultsListPanel'); // UL for results in the new panel
+
+    // const appContainer = document.querySelector('.app-container'); // If you need to change grid columns
+
+    function openSearchPanel() {
+        if (mainSidebar) mainSidebar.classList.add('narrow');
+        if (searchPanel) searchPanel.classList.add('active');
+        if (searchIconToggle) searchIconToggle.classList.add('active'); // Highlight icon
+        // if (appContainer) appContainer.classList.add('sidebar-narrow-active'); // If changing grid
+        if (panelSearchInput) panelSearchInput.focus();
+    }
+
+    function closeSearchPanel() {
+        if (mainSidebar) mainSidebar.classList.remove('narrow');
+        if (searchPanel) searchPanel.classList.remove('active');
+        if (searchIconToggle) searchIconToggle.classList.remove('active'); // Remove highlight
+        // if (appContainer) appContainer.classList.remove('sidebar-narrow-active'); // If changing grid
+    }
+
+    if (searchIconToggle) {
+        searchIconToggle.addEventListener('click', function (event) {
+            event.stopPropagation();
+            if (searchPanel && searchPanel.classList.contains('active')) {
+                closeSearchPanel();
+            } else {
+                openSearchPanel();
+            }
+        });
+    }
+
+    document.addEventListener('click', function(event) {
+        if (searchPanel && searchPanel.classList.contains('active')) { 
+            const isClickInsideSearchPanel = searchPanel.contains(event.target);
+            // Check if mainSidebar exists before trying to check if it contains the target
+            const isClickOnSearchIconToggle = searchIconToggle ? searchIconToggle.contains(event.target) : false;
+
+            if (!isClickInsideSearchPanel && !isClickOnSearchIconToggle) {
+                closeSearchPanel();
+            }
+        }
+    });
+
+    if (panelSearchInput) {
+        panelSearchInput.addEventListener('input', function () {
+            const query = this.value;
+            const recentsContainer = document.querySelector('.search-panel-recents');
+            
+            if (liveResultsListPanel) { // Check if the element exists
+                if (query.length < 2) {
+                    liveResultsListPanel.innerHTML = '';
+                    if(recentsContainer) recentsContainer.style.display = 'block';
+                    return; 
+                }
+                if(recentsContainer) recentsContainer.style.display = 'none';
+
+                fetch(`/search_users?q=${encodeURIComponent(query)}`)
+                  .then(res => {
+                    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+                    return res.json();
+                  })
+                  .then(data => {
+                    liveResultsListPanel.innerHTML = '';
+                    data.forEach(user => {
+                      const listItem = document.createElement('li');
+                      listItem.textContent = user.username;
+                      liveResultsListPanel.appendChild(listItem);
+                    });
+                  })
+                  .catch(error => {
+                    console.error("Error fetching search results:", error);
+                    liveResultsListPanel.innerHTML = '<li>Error loading results.</li>';
+                  });
+            }
+        });
+    }
+
+    const clearRecentsButton = document.getElementById('clearRecentsButton');
+    if(clearRecentsButton) {
+        clearRecentsButton.addEventListener('click', function() {
+            const recentSearchesList = document.getElementById('recentSearchesList');
+            if (recentSearchesList) recentSearchesList.innerHTML = '<li>Recent searches cleared.</li>';
+        });
+    }
+    
+    const recentRemoveButtons = document.querySelectorAll('.recent-remove');
+    if (recentRemoveButtons) {
+        recentRemoveButtons.forEach(button => {
+            button.addEventListener('click', function(event) {
+                event.stopPropagation(); 
+                this.closest('li').remove();
+            });
+        });
+    }
+  });
+</script>
