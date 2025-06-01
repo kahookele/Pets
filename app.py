@@ -1,4 +1,3 @@
-import os, datetime
 from flask import (
     Flask, render_template, request, redirect,
     url_for, session, flash
@@ -36,6 +35,30 @@ def login_required(f):
             return redirect(url_for('login', next=request.url)) # Redirect to login, pass current URL as next
         return f(*args, **kwargs)
     return decorated_function
+
+@app.context_processor
+def inject_unread_notification_count():
+    if 'user_uid' in session:  # Check if the user is logged in
+        user_uid = session['user_uid']
+        try:
+            # Query Firestore for notifications that belong to the current user and are unread
+            notifications_query = db_firestore.collection('notifications') \
+                                              .where('recipient_uid', '==', user_uid) \
+                                              .where('is_read', '==', False) \
+                                              .stream()  # Use .stream() for iterating documents
+
+            # Count the number of unread notifications
+            unread_count = sum(1 for _ in notifications_query)
+            
+            return dict(unread_notification_count=unread_count)
+        except Exception as e:
+            # Log any errors that occur during the Firestore query
+            print(f"Error fetching unread notification count for UID {user_uid}: {e}")
+            # Return 0 in case of an error to prevent site breakage
+            return dict(unread_notification_count=0)
+    else:
+        # If no user is logged in, there are no unread notifications for them
+        return dict(unread_notification_count=0)
 
 
 @app.route("/")
@@ -288,6 +311,59 @@ def signup():
 
     # For GET request, just render the signup page
     return render_template("signup.html", active_page='signup')
+
+
+@app.route('/direct_messages/<conversation_id>', methods=['GET', 'POST'])
+@login_required
+def direct_messages(conversation_id):
+    messages_ref = db_firestore.collection('conversations').document(conversation_id).collection('messages')
+
+    if request.method == 'POST':
+        sender = session.get('display_name', 'anonymous')
+        text = request.form['message']
+        messages_ref.add({
+            'sender': sender,
+            'text': text,
+            'timestamp': firestore.SERVER_TIMESTAMP
+        })
+        return redirect(url_for('direct_messages', conversation_id=conversation_id))
+
+    messages = messages_ref.order_by('timestamp').stream()
+    message_list = []
+    for msg in messages:
+        data = msg.to_dict()
+        message_list.append({
+            'sender': data.get('sender'),
+            'text': data.get('text'),
+            'timestamp': data.get('timestamp')
+        })
+
+    return render_template('direct_messages.html', messages=message_list, conversation_id=conversation_id)
+
+
+@app.route('/notifications')
+@login_required
+def notifications_page():
+    user_uid = session.get('user_uid')
+    
+    notifications_query = db_firestore.collection('notifications') \
+                                      .where('recipient_uid', '==', user_uid) \
+                                      .order_by('timestamp', direction=firestore.Query.DESCENDING) \
+                                      .stream()
+    
+    user_notifications = []
+    for notif_doc in notifications_query:
+        notif_data = notif_doc.to_dict()
+        user_notifications.append({
+            'id': notif_doc.id,
+            'message': notif_data.get('message'),
+            'link': notif_data.get('link'),
+            'timestamp': notif_data.get('timestamp'),
+            'is_read': notif_data.get('is_read', False),
+            'sender_name': notif_data.get('sender_name', 'System') # Default if sender_name isn't there
+        })
+        
+    return render_template('notifications.html', notifications=user_notifications, active_page='notifications')
 
 
 # ------------------Firebase Test------------------------

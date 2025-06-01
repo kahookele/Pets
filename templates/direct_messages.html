@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Password | Pet App{% endblock %}
+
+{% block content %}
+
+
+<h2>Conversation: {{ conversation_id }}</h2>
+<div id="chat-box">
+    {% for message in messages %}
+        <p><b>{{ message.sender }}:</b> {{ message.text }} <i>{{ message.timestamp }}</i></p>
+    {% endfor %}
+</div>
+<form method="post">
+    <input type="text" name="message" placeholder="Type your message..." required>
+    <button type="submit">Send</button>
+</form>
+
+{% endblock %}

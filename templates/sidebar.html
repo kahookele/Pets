@@ -111,9 +111,21 @@
                 <span class="sidebar-label">Profile</span>
             </a>
         </li>
+        <li> {# Removed class="nav-item" to match other li elements #}
+            <a href="{{ url_for('notifications_page') }}" class="{{ 'active' if active_page == 'notifications' else '' }}"> {# Adjusted class attribute #}
+                <span class="sidebar-icon"><i class="bi bi-hearts"></i></span>
+                <span class="sidebar-label">
+                    Notifications
+                    {% if unread_notification_count > 0 %}
+                        {# Added ms-1 for a little space if you're using Bootstrap spacing utilities #}
+                        <span class="badge bg-danger ms-1">{{ unread_notification_count }}</span> 
+                    {% endif %}
+                </span>
+            </a>
+        </li>
         <li>
-            <a href="{{ url_for('profile') }}" class="{{ 'active' if active_page == 'profile' else '' }}">
-                <span class="sidebar-icon"><i class="bi bi-chat-dots-fill"></i></span>
+            <a href="{{ url_for('direct_messages', conversation_id='user1_user2') }}" class="{{ 'active' if active_page == 'direct_messages' else '' }}">
+                <span class="sidebar-icon"><i class="bi bi-envelope-fill"></i></span>
                 <span class="sidebar-label">Messages</span>
             </a>
         </li>
