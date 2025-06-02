@@ -151,6 +151,58 @@
         color: var(--main-bg-color) !important; 
     }
 
+    #resultsListPanel { /* The UL holding the results */
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+    max-height: 300px; /* Example max height, adjust as needed */
+    overflow-y: auto; /* Add scroll if results exceed max height */
+    }
+
+    .search-result-link {
+        display: flex; /* Key for aligning image and text horizontally */
+        align-items: center; /* Vertically aligns items in the center */
+        padding: 8px 15px; /* Padding inside each result item */
+        text-decoration: none;
+        color: var(--primary-text-color, #333); /* Use your CSS variable or a default */
+        transition: background-color 0.2s ease-in-out;
+        border-bottom: 1px solid var(--border-color, #eee); /* Light border between items */
+    }
+
+    .search-result-item:last-child .search-result-link {
+        border-bottom: none; /* No border for the last item */
+    }
+
+    .search-result-link:hover {
+        background-color: var(--general-hover-bg-color, #f0f0f0); /* Use variable or default */
+        color: var(--hover-text-color, #000);
+    }
+
+    .search-result-image {
+        width: 35px;   /* Adjust size of the profile image */
+        height: 35px;  /* Adjust size of the profile image */
+        border-radius: 50%; /* Makes the image circular */
+        margin-right: 12px; /* Space between image and username */
+        object-fit: cover; /* Ensures the image covers the area without distortion */
+        background-color: #f0f0f0; /* Fallback bg if image is transparent or slow loading */
+    }
+
+    .search-result-username {
+        font-size: 0.9rem;
+        font-weight: 500;
+        /* Allow username to take remaining space and truncate if too long */
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .search-no-results {
+        padding: 10px 15px;
+        color: #777;
+        font-style: italic;
+        text-align: center;
+    }
+
 </style>
 
 <div class="sidebar" id="mainSidebar"> <div class="sidebar-title">Pets</div>
@@ -204,29 +256,158 @@
 <script>
   // Ensure this script runs after the DOM is fully loaded
   document.addEventListener('DOMContentLoaded', function() {
-    const mainSidebar = document.getElementById('mainSidebar'); 
-    const searchIconToggle = document.getElementById('searchIconToggle'); 
-    const searchPanel = document.getElementById('searchPanel');     
-    const panelSearchInput = document.getElementById('panelSearchInput'); 
-    const liveResultsListPanel = document.getElementById('resultsListPanel'); // Ensure this ID matches the UL in base.html
+    const mainSidebar = document.getElementById('mainSidebar');
+    const searchIconToggle = document.getElementById('searchIconToggle');
+    const searchPanel = document.getElementById('searchPanel');
+    const panelSearchInput = document.getElementById('panelSearchInput');
+    const liveResultsListPanel = document.getElementById('resultsListPanel');
+    const recentsContainer = document.querySelector('.search-panel-recents');
+    const recentSearchesUL = document.getElementById('recentSearchesList'); // Corrected ID
+    const clearRecentsButton = document.getElementById('clearRecentsButton');
+    const liveSearchResultsContainer = document.getElementById('liveSearchResultsContainer');
 
+
+    const RECENT_SEARCHES_KEY = 'petAppRecentSearches';
+    const MAX_RECENT_SEARCHES = 7; // Max number of recent searches to store
+
+    // --- Recent Searches Functions ---
+    function loadRecentSearches() {
+        const searches = localStorage.getItem(RECENT_SEARCHES_KEY);
+        return searches ? JSON.parse(searches) : [];
+    }
+
+    function saveRecentSearches(searches) {
+        localStorage.setItem(RECENT_SEARCHES_KEY, JSON.stringify(searches));
+    }
+
+    function addOrUpdateRecentSearch(user) { // user = {id, username, profile_pic}
+        let recents = loadRecentSearches();
+        // Remove if already exists to move it to the top
+        recents = recents.filter(s => s.id !== user.id);
+        // Add to the beginning
+        recents.unshift(user);
+        // Trim to max length
+        if (recents.length > MAX_RECENT_SEARCHES) {
+            recents = recents.slice(0, MAX_RECENT_SEARCHES);
+        }
+        saveRecentSearches(recents);
+        displayRecentSearches(); // Re-render after adding/updating
+    }
+
+    function removeRecentSearch(userId) {
+        let recents = loadRecentSearches();
+        recents = recents.filter(s => s.id !== userId);
+        saveRecentSearches(recents);
+        displayRecentSearches();
+    }
+
+    function displayRecentSearches() {
+        const recents = loadRecentSearches();
+        recentSearchesUL.innerHTML = ''; // Clear current list
+
+        if (recents.length === 0) {
+            const noRecentsLi = document.createElement('li');
+            noRecentsLi.textContent = 'No recent searches.';
+            noRecentsLi.style.padding = '10px 0'; // Some basic styling for the message
+            noRecentsLi.style.textAlign = 'center';
+            noRecentsLi.style.color = 'var(--secondary-text-color)';
+            recentSearchesUL.appendChild(noRecentsLi);
+            if (recentsContainer) recentsContainer.style.display = 'block'; // Make sure recents area is visible
+            if (liveSearchResultsContainer) liveSearchResultsContainer.style.display = 'none';
+            return;
+        }
+
+        recents.forEach(s_user => {
+            const listItem = document.createElement('li');
+            // Use existing CSS classes from base.html for styling
+
+            const link = document.createElement('a');
+            link.href = `/profile/${s_user.username}`;
+            link.style.display = 'flex'; // Make link behave like a block for full clickable area
+            link.style.alignItems = 'center';
+            link.style.width = '100%';
+            link.style.textDecoration = 'none';
+            link.style.padding = '8px 4px'; // Match hover style for items
+            link.style.borderRadius = '4px';
+            link.onmouseover = function() { this.style.backgroundColor = 'var(--general-hover-bg-color)'; };
+            link.onmouseout = function() { this.style.backgroundColor = 'transparent'; };
+
+
+            link.addEventListener('click', (e) => {
+                // Update recent search order before navigating
+                addOrUpdateRecentSearch(s_user);
+                // Allow default navigation to proceed
+            });
+
+            const img = document.createElement('img');
+            img.src = s_user.profile_pic || '/static/images/default_avatar.png';
+            img.alt = s_user.username;
+            img.classList.add('recent-avatar'); // CSS class from base.html
+             img.onerror = function() { this.src = '/static/images/default_avatar.png'; };
+
+
+            const infoDiv = document.createElement('div');
+            infoDiv.classList.add('recent-info'); // CSS class from base.html
+
+            const usernameSpan = document.createElement('span');
+            usernameSpan.classList.add('recent-username'); // CSS class from base.html
+            usernameSpan.textContent = s_user.username;
+            usernameSpan.style.color = 'var(--primary-text-color)';
+
+
+            const subtextSpan = document.createElement('span');
+            subtextSpan.classList.add('recent-subtext'); // CSS class from base.html
+            subtextSpan.textContent = "Profile"; // Or s_user.username, or a fetched full name if available
+            subtextSpan.style.color = 'var(--secondary-text-color)';
+
+
+            infoDiv.appendChild(usernameSpan);
+            infoDiv.appendChild(subtextSpan);
+
+            link.appendChild(img);
+            link.appendChild(infoDiv);
+
+            listItem.appendChild(link);
+
+            const removeButton = document.createElement('button');
+            removeButton.classList.add('recent-remove'); // CSS class from base.html
+            removeButton.innerHTML = '×'; // '×' character
+            removeButton.dataset.userId = s_user.id;
+            removeButton.onclick = function(event) {
+                event.stopPropagation(); // Prevent link navigation if 'x' is inside <a>
+                removeRecentSearch(s_user.id);
+            };
+
+            listItem.appendChild(removeButton); // Append remove button next to the link within the li
+            recentSearchesUL.appendChild(listItem);
+        });
+        if (recentsContainer) recentsContainer.style.display = 'block';
+        if (liveSearchResultsContainer) liveSearchResultsContainer.style.display = 'none';
+    }
+
+    // --- Panel Open/Close Logic ---
     function openSearchPanel() {
         if (mainSidebar) mainSidebar.classList.add('narrow');
         if (searchPanel) searchPanel.classList.add('active');
-        // The .active class on searchIconToggle will now pick up the sidebar's <a>.active styles
-        if (searchIconToggle) searchIconToggle.classList.add('active'); 
+        if (searchIconToggle) searchIconToggle.classList.add('active');
         if (panelSearchInput) panelSearchInput.focus();
+        // When panel opens, show recents if input is empty
+        if (panelSearchInput && panelSearchInput.value.length < 2) {
+             displayRecentSearches();
+             if (liveSearchResultsContainer) liveSearchResultsContainer.style.display = 'none';
+             if (recentsContainer) recentsContainer.style.display = 'block';
+        }
     }
 
     function closeSearchPanel() {
         if (mainSidebar) mainSidebar.classList.remove('narrow');
         if (searchPanel) searchPanel.classList.remove('active');
-        if (searchIconToggle) searchIconToggle.classList.remove('active'); 
+        if (searchIconToggle) searchIconToggle.classList.remove('active');
     }
 
     if (searchIconToggle) {
         searchIconToggle.addEventListener('click', function (event) {
-            event.stopPropagation(); // Prevent click from bubbling to document
+            event.stopPropagation();
             if (searchPanel && searchPanel.classList.contains('active')) {
                 closeSearchPanel();
             } else {
@@ -235,76 +416,102 @@
         });
     }
 
-    // Close search panel if clicking outside of it
     document.addEventListener('click', function(event) {
-        if (searchPanel && searchPanel.classList.contains('active')) { 
+        if (searchPanel && searchPanel.classList.contains('active')) {
             const isClickInsideSearchPanel = searchPanel.contains(event.target);
-            // Check if the click was on the toggle button itself (or its children)
             const isClickOnSearchIconToggle = searchIconToggle ? searchIconToggle.contains(event.target) : false;
-
             if (!isClickInsideSearchPanel && !isClickOnSearchIconToggle) {
                 closeSearchPanel();
             }
         }
     });
 
-    // Live search functionality (assuming your backend /search_users endpoint exists)
+    // --- Live Search & Input Handling ---
     if (panelSearchInput) {
         panelSearchInput.addEventListener('input', function () {
-            const query = this.value;
-            const recentsContainer = document.querySelector('.search-panel-recents'); // From base.html
-            
-            if (liveResultsListPanel) { 
-                if (query.length < 2) { // Only search if query is at least 2 chars
-                    liveResultsListPanel.innerHTML = '';
-                    if(recentsContainer) recentsContainer.style.display = 'block'; // Show recents
-                    return; 
-                }
-                if(recentsContainer) recentsContainer.style.display = 'none'; // Hide recents when typing
+            const query = this.value.trim();
 
-                fetch(`/search_users?q=${encodeURIComponent(query)}`)
-                  .then(res => {
-                    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-                    return res.json();
-                  })
-                  .then(data => {
-                    liveResultsListPanel.innerHTML = ''; // Clear previous results
-                    data.forEach(user => {
-                      const listItem = document.createElement('li');
-                      listItem.textContent = user.username; // Adjust if your user object has different properties
-                      // Add click handler to go to user profile or similar
-                      // listItem.onclick = () => { window.location.href = `/user/${user.username}`; };
-                      liveResultsListPanel.appendChild(listItem);
+            if (query.length < 2) {
+                liveResultsListPanel.innerHTML = '';
+                if (liveSearchResultsContainer) liveSearchResultsContainer.style.display = 'none';
+                if (recentsContainer) recentsContainer.style.display = 'block';
+                displayRecentSearches(); // Show recents when query is short
+                return;
+            }
+
+            if (recentsContainer) recentsContainer.style.display = 'none'; // Hide recents when typing
+            if (liveSearchResultsContainer) liveSearchResultsContainer.style.display = 'block';
+
+
+            fetch(`/search_users?q=${encodeURIComponent(query)}`)
+              .then(res => {
+                if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+                return res.json();
+              })
+              .then(data => {
+                liveResultsListPanel.innerHTML = '';
+                if (data.length === 0) {
+                    liveResultsListPanel.innerHTML = '<li class="search-no-results">No users found.</li>';
+                } else {
+                    data.forEach(user => { // user from backend: {id, username, profile_pic}
+                        const listItem = document.createElement('li');
+                        listItem.classList.add('search-result-item'); // Ensure you have styles for this
+
+                        const link = document.createElement('a');
+                        link.href = `/profile/${user.username}`;
+                        link.classList.add('search-result-link'); // Existing class from sidebar.html for results
+
+                        // Add user to recents when their profile is about to be visited
+                        link.addEventListener('click', function() {
+                            addOrUpdateRecentSearch({
+                                id: user.id, // Make sure your backend search_users provides 'id'
+                                username: user.username,
+                                profile_pic: user.profile_pic
+                            });
+                        });
+
+                        const img = document.createElement('img');
+                        img.src = user.profile_pic || '/static/images/default_avatar.png';
+                        img.alt = user.username;
+                        img.classList.add('search-result-image');
+                        img.onerror = function() { this.src = '/static/images/default_avatar.png'; };
+
+                        const usernameSpan = document.createElement('span');
+                        usernameSpan.textContent = user.username;
+                        usernameSpan.classList.add('search-result-username');
+
+                        link.appendChild(img);
+                        link.appendChild(usernameSpan);
+                        listItem.appendChild(link);
+                        liveResultsListPanel.appendChild(listItem);
                     });
-                  })
-                  .catch(error => {
-                    console.error("Error fetching search results:", error);
-                    liveResultsListPanel.innerHTML = '<li>Error loading results.</li>';
-                  });
-            }
+                }
+              })
+              .catch(error => {
+                console.error("Error fetching search results:", error);
+                liveResultsListPanel.innerHTML = '<li class="search-no-results">Error loading results.</li>';
+              });
         });
     }
 
-    // Clear recents button functionality (assuming structure from base.html)
-    const clearRecentsButton = document.getElementById('clearRecentsButton');
-    if(clearRecentsButton) {
+    // --- Recents Clear All Button ---
+    if (clearRecentsButton) {
         clearRecentsButton.addEventListener('click', function() {
-            const recentSearchesList = document.getElementById('recentSearchesList'); // From base.html
-            if (recentSearchesList) recentSearchesList.innerHTML = '<li>Recent searches cleared.</li>';
-            // Add logic here to actually clear them from storage if needed
+            saveRecentSearches([]); // Clear from localStorage
+            displayRecentSearches(); // Re-render (will show "No recent searches")
         });
     }
-    
-    // Remove individual recent search item (assuming structure from base.html)
-    const recentSearchesList = document.getElementById('recentSearchesList');
-    if (recentSearchesList) {
-        recentSearchesList.addEventListener('click', function(event) {
-            if (event.target && event.target.classList.contains('recent-remove')) {
-                event.stopPropagation(); 
-                event.target.closest('li').remove();
-                // Add logic here to remove from storage if needed
-            }
-        });
+
+    // --- Initial Display on Load (if panel might be open or for first open) ---
+    // If the panel starts closed, this will run when it's first opened.
+    // If the panel could start open, this ensures recents are shown.
+    if (panelSearchInput && panelSearchInput.value.length < 2) {
+        displayRecentSearches();
+    } else {
+        if (recentsContainer) recentsContainer.style.display = 'none';
+    }
+    if (liveResultsListPanel.innerHTML.trim() === '') { // if no live results initially
+         if (liveSearchResultsContainer) liveSearchResultsContainer.style.display = 'none';
     }
   });
 </script>

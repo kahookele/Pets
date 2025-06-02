@@ -1,6 +1,13 @@
 {% extends "base.html" %}
 
-{% block title %}{{ user.username }} | Pet App{% endblock %}
+{% block title %}
+    {# Show username in title if profile is viewable or if user data exists for limited view #}
+    {% if (can_view_profile or user) and user.username %}
+        {{ user.username }} | Pet App
+    {% else %}
+        Profile | Pet App
+    {% endif %}
+{% endblock %}
 
 {% block content %}
 <style>
@@ -88,9 +95,9 @@
     .ig-info-row3-details {
         font-size: 16px;
     }
-    .ig-fullname {
+    .ig-fullname { /* You might want to add a fullname field to your user data */
         font-weight: 600;
-        margin-bottom: 4px; /* Space between full name and bio */
+        margin-bottom: 4px; 
     }
     .ig-bio {
         line-height: 1.4;
@@ -98,6 +105,7 @@
     }
 
     /* Styles for the "Update Profile" form if you decide to integrate it here */
+    /* These are fine, but typically this form would be on a separate edit_profile.html page */
     .profile-edit-section {
         margin-top: 40px;
         padding: 20px;
@@ -139,47 +147,125 @@
         background-color: #2680d9;
     }
 
+    /* Style for the private profile message */
+    .private-profile-message {
+        text-align: center;
+        padding: 40px 20px; /* Adjusted padding */
+        font-size: 1.1rem; /* Slightly adjusted font size */
+        color: var(--secondary-text-color, #606770);
+    }
+    .private-profile-message i {
+        font-size: 2.5rem;
+        margin-bottom: 15px;
+        color: var(--secondary-text-color, #606770);
+    }
+    .private-profile-message strong {
+        display: block; /* Make strong text a block for better spacing */
+        font-size: 1.3rem;
+        margin-bottom: 10px;
+    }
+
 </style>
 
-<div class="ig-profile-container">
-    <header class="ig-profile-header">
-        <div class="ig-profile-picture-wrapper">
-            {% if user.profile_image %}
-                <img src="{{ user.profile_image }}" alt="{{ user.username }}'s profile picture">
-            {% else %}
-                <img src="https://via.placeholder.com/150" alt="Default profile picture">
-            {% endif %}
-        </div>
-
-        <section class="ig-profile-info">
-            <div class="ig-info-row1">
-                <h2 class="ig-username">{{ user.username }}</h2>
-                <div class="ig-action-buttons">
-                    <a href="{{ url_for('edit_profile') }}" class="btn-ig">Edit profile</a>
-                    <a href="#" class="btn-ig">View archive</a> <span class="settings-icon-ig"><i class="bi bi-gear-fill"></i></span> </div>
+{# Main conditional block: can the user view this profile? #}
+{% if can_view_profile %}
+    {# This is the FULL PROFILE view - for owners, or public profiles, or private profiles the viewer has access to #}
+    <div class="ig-profile-container">
+        <header class="ig-profile-header">
+            <div class="ig-profile-picture-wrapper">
+                {% if user.profile_image %}
+                    <img src="{{ user.profile_image }}" alt="{{ user.username }}'s profile picture">
+                {% else %}
+                    <img src="https://placehold.co/150x150/E9ECEF/606770?text={{ user.username[0]|upper if user.username else 'P' }}" alt="Default profile picture">
+                {% endif %}
             </div>
 
-            <ul class="ig-info-row2-stats">
-                <li class="ig-stat-item">
-                    <span class="count">0</span> posts
-                </li>
-                <li class="ig-stat-item">
-                    <span class="count">0</span> followers </li>
-                <li class="ig-stat-item">
-                    <span class="count">0</span> following </li>
-            </ul>
-
-            <div class="ig-info-row3-details">
-                <div class="ig-bio">
-                    {{ user.bio if user.bio else 'No bio yet.' }}
-                    <!-- <br> {{ user.pet_names|join(', ') if user.pet_names }} -->
+            <section class="ig-profile-info">
+                <div class="ig-info-row1">
+                    <h2 class="ig-username">{{ user.username }}</h2>
+                    <div class="ig-action-buttons">
+                        {% if is_own_profile %}
+                            <a href="{{ url_for('edit_profile') }}" class="btn-ig">Edit profile</a>
+                            <a href="#" class="btn-ig">View archive</a>
+                            <a href="{{ url_for('edit_profile') }}" title="Settings">
+                                <span class="settings-icon-ig"><i class="bi bi-gear-fill"></i></span>
+                            </a>
+                        {% else %}
+                            {# Example buttons for other users' viewable profiles (needs backend) #}
+                            <button type="button" class="btn-ig">Follow</button>
+                            <button type="button" class="btn-ig">Message</button>
+                        {% endif %}
+                    </div>
                 </div>
+
+                <ul class="ig-info-row2-stats">
+                    <li class="ig-stat-item"><span class="count">0</span> posts</li>
+                    <li class="ig-stat-item"><span class="count">0</span> followers</li>
+                    <li class="ig-stat-item"><span class="count">0</span> following</li>
+                </ul>
+
+                <div class="ig-info-row3-details">
+                    {% if user.fullname %}<div class="ig-fullname"><strong>{{ user.fullname }}</strong></div>{% endif %}
+                    <div class="ig-bio">{{ user.bio if user.bio else 'No bio yet.' }}</div>
+                </div>
+            </section>
+        </header>
+
+        <hr style="border: 0; border-top: 1px solid #dbdbdb; margin: 20px 0;">
+        
+        <div style="text-align:center; padding: 40px 0; color: var(--secondary-text-color, #606770);">
+            <i class="bi bi-camera" style="font-size: 2rem; margin-bottom:10px;"></i>
+            <p>No posts yet.</p>
+        </div>
+    </div>
+{% else %}
+    {# This is the LIMITED PUBLIC VIEW for PRIVATE profiles (can_view_profile is False) #}
+    {# We still expect 'user' data to be available from app.py to show some basics #}
+    {% if user %}
+        <div class="ig-profile-container">
+            <header class="ig-profile-header">
+                <div class="ig-profile-picture-wrapper">
+                    {% if user.profile_image %}
+                        <img src="{{ user.profile_image }}" alt="{{ user.username }}'s profile picture">
+                    {% else %}
+                        <img src="https://placehold.co/150x150/E9ECEF/606770?text={{ user.username[0]|upper if user.username else 'P' }}" alt="Default profile picture">
+                    {% endif %}
+                </div>
+                <section class="ig-profile-info">
+                    <div class="ig-info-row1">
+                        <h2 class="ig-username">{{ user.username }}</h2>
+                        {# No action buttons here, or perhaps a "Request to Follow" button if you have that system #}
+                    </div>
+                     {# Stats are kept private for this view #}
+                     <ul class="ig-info-row2-stats" style="margin-top: 20px;">
+                        <li class="ig-stat-item"><span class="count">-</span> posts</li>
+                        <li class="ig-stat-item"><span class="count">-</span> followers</li>
+                        <li class="ig-stat-item"><span class="count">-</span> following</li>
+                    </ul>
+                    {# Optionally, you could show the bio here too if you want #}
+                    {% if user.bio %}
+                        <div class="ig-info-row3-details" style="margin-top: 15px;"> {# Adjusted margin #}
+                             <div class="ig-bio" style="font-size: 16px;">{{ user.bio }}</div>
+                        </div>
+                    {% endif %}
+                </section>
+            </header>
+
+            <hr style="border: 0; border-top: 1px solid #dbdbdb; margin: 20px 0;">
+
+            <div class="private-profile-message">
+                <i class="bi bi-lock-fill"></i>
+                <strong>This Account is Private</strong>
+                <p>Follow this account to see their photos and posts.</p>
+                {# If you implement a follow system, a "Request to Follow" button could go here #}
             </div>
-        </section>
-    </header>
+        </div>
+    {% else %}
+        {# Fallback if user data somehow wasn't passed, though app.py should prevent this #}
+        <div class="ig-profile-container private-profile-message">
+            <p>This profile could not be loaded.</p>
+        </div>
+    {% endif %}
+{% endif %}
 
-    <hr style="border: 0; border-top: 1px solid #dbdbdb; margin: 20px 0;">
-    
-
-</div>
 {% endblock %}

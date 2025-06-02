@@ -150,8 +150,12 @@
         cursor: pointer; 
         border-radius: 4px; 
     }
-    #recentSearchesList li:hover { 
-        background-color: var(--general-hover-bg-color); 
+    #recentSearchesList li {
+        display: flex; 
+        align-items: center;
+        justify-content: space-between;
+        border-radius: 4px;
+        margin-bottom: 2px; 
     }
     .recent-avatar { 
         width: 44px; 
@@ -234,9 +238,8 @@
               <button id="clearRecentsButton">Clear all</button>
           </div>
           <ul id="recentSearchesList">
-              <li><img src="https://placehold.co/44x44/E9ECEF/606770?text=U" alt="avatar" class="recent-avatar"><div class="recent-info"><span class="recent-username">houseofhighlights</span><span class="recent-subtext">House of Highlights • Following</span></div><button class="recent-remove">×</button></li>
-              <li><img src="https://placehold.co/44x44/E9ECEF/606770?text=U" alt="avatar" class="recent-avatar"><div class="recent-info"><span class="recent-username">ted.lasso.official</span><span class="recent-subtext">Ted Lasso</span></div><button class="recent-remove">×</button></li>
-              <li><img src="https://placehold.co/44x44/E9ECEF/606770?text=U" alt="avatar" class="recent-avatar"><div class="recent-info"><span class="recent-username">apple</span><span class="recent-subtext">Apple • 34.2M followers</span></div><button class="recent-remove">×</button></li>
+              <!-- This list will now be empty by default -->
+              <!-- Your JavaScript will populate this later with actual recent searches -->
           </ul>
       </div>
       <div id="liveSearchResultsContainer">

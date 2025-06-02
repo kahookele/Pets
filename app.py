@@ -72,18 +72,61 @@ def home():
 @login_required
 def profile():
     user_uid = session.get('user_uid')
-    # Fetch profile data for user_uid from Firestore
     try:
         user_doc = db_firestore.collection('users').document(user_uid).get()
         if user_doc.exists:
             user_data = user_doc.to_dict()
-            return render_template("profile.html", active_page='profile', user=user_data)
+            username = user_data.get('username')
+            if username:
+                return redirect(url_for('view_profile_page', view_username=username))
+            else:
+                flash("Your username is not set. Cannot display profile.", "error")
+                return redirect(url_for('edit_profile')) # Prompt to edit profile
         else:
-            flash("User profile not found.", "error")
-            return redirect(url_for('login'))
+            flash("Your profile data could not be found.", "error")
+            return redirect(url_for('logout'))
     except Exception as e:
-        flash(f"Error fetching profile: {e}", "error")
-        return redirect(url_for('login'))
+        flash(f"Error accessing your profile: {str(e)}", "error")
+        return redirect(url_for('home'))
+    
+
+@app.route('/profile/<string:view_username>')
+@login_required
+def view_profile_page(view_username):
+    logged_in_user_uid = session.get('user_uid')
+
+    users_ref = db_firestore.collection('users')
+    # Query for the user by their username
+    user_query = users_ref.where('username', '==', view_username).limit(1).stream()
+    target_user_doc = next(user_query, None) # Get the first document or None if not found
+
+    if not target_user_doc:
+        flash(f"Profile for '{view_username}' not found.", "error")
+        return redirect(url_for('home'))
+
+    target_user_data = target_user_doc.to_dict()
+    target_user_uid = target_user_doc.id
+
+    is_own_profile = (target_user_uid == logged_in_user_uid)
+    
+    # Get the profile visibility, defaulting to 'private' if not set (for older users or safety)
+    visibility = target_user_data.get('profile_visibility', 'private')
+
+    can_view_profile = False
+    if visibility == 'public':
+        can_view_profile = True
+    elif is_own_profile: # Users can always view their own profile
+        can_view_profile = True
+    # Future: You could add more conditions here, e.g., if they are friends
+
+    # The 'active_page' variable is for your navigation bar highlighting.
+    # Set it to 'profile' if you want the 'Profile' nav link to be active
+    # when viewing any profile, or set it based on context if needed.
+    return render_template("profile.html",
+                           user=target_user_data,
+                           is_own_profile=is_own_profile,
+                           can_view_profile=can_view_profile,
+                           active_page='profile') # Adjust 'active_page' as per your nav logic
     
 
 @app.route('/edit_profile', methods=['GET', 'POST'])
@@ -261,6 +304,7 @@ def signup():
         password = request.form.get('password')
         confirm_password = request.form.get('confirm_password')
         pet_names_str = request.form.get('pet_names', '')
+        
 
         if not all([username, email, password, confirm_password]):
             flash("All fields except pet names are required.", "error")
@@ -283,9 +327,10 @@ def signup():
             user_data = {
                 'username': username,
                 'email': email,
-                # DO NOT store the password in Firestore. Auth handles it.
                 'pet_names': pet_names_list,
-                'created_at': firestore.SERVER_TIMESTAMP # Good practice
+                'created_at': firestore.SERVER_TIMESTAMP, # Good practice
+                'profile_visibility': 'private',
+                'friends': []
             }
 
             # Use the Firebase Auth UID as the document ID in Firestore
@@ -324,14 +369,14 @@ def search_users():
     users = users_ref.stream()
 
     results = []
-    for user in users:
-        data = user.to_dict()
+    for user_doc in users:
+        data = user_doc.to_dict()
         username = data.get('username', '').lower()
-        if query in username:
+        if query and query in username:
             results.append({
-                'id': user.id,
+                'id': user_doc.id,
                 'username': data.get('username'),
-                'profile_pic': data.get('profile_pic_url', '')  # optional
+                'profile_pic': data.get('profile_image', '')
             })
 
     return jsonify(results)
