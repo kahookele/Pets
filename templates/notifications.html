@@ -22,26 +22,45 @@
                 <li class="list-group-item {% if not notification.is_read %}list-group-item-info{% endif %}">
                     <div class="d-flex w-100 justify-content-between">
                         <h5 class="mb-1">
-                            {% if notification.link %}
+                            {# Link to sender's profile for friend requests, or the provided link #}
+                            {% if notification.link and notification.link != '#' %}
                                 <a href="{{ notification.link }}">{{ notification.message }}</a>
                             {% else %}
                                 {{ notification.message }}
                             {% endif %}
                         </h5>
-                        <small>
+                        <small class="text-muted"> {# Applied text-muted class for consistency #}
                             {% if notification.timestamp %}
-                                {{ notification.timestamp.strftime('%Y-%m-%d %H:%M') if notification.timestamp else 'No date' }}
+                                {# Assuming timestamp is a Firestore Timestamp, Jinja can format it #}
+                                {# For more specific formatting, you'd pass a pre-formatted string or use a custom filter #}
+                                {{ notification.timestamp.strftime('%Y-%m-%d %H:%M') if notification.timestamp else 'Recently' }}
                             {% endif %}
                         </small>
                     </div>
                     <p class="mb-1">From: {{ notification.sender_name }}</p>
-                    {% if not notification.is_read %}
-                        <small>
-                            <a href="{{ url_for('mark_notification_as_read', notification_id=notification.id, next=request.url) }}" class="btn btn-sm btn-outline-secondary">Mark as Read</a>
-                        </small>
-                    {% else %}
-                        <small class="text-muted">Read</small>
-                    {% endif %}
+                    
+                    {# Action buttons section #}
+                    <div class="mt-2">
+                        {% if notification.type == 'friend_request' and not notification.is_read and notification.request_id %}
+                            {# Friend Request Actions #}
+                            <form method="POST" action="{{ url_for('handle_friend_request', request_id=notification.request_id, action='accept') }}" style="display: inline-block; margin-right: 5px;">
+                                <input type="hidden" name="next_url" value="{{ request.url }}">
+                                <button type="submit" class="btn btn-sm btn-success">Accept</button>
+                            </form>
+                            <form method="POST" action="{{ url_for('handle_friend_request', request_id=notification.request_id, action='decline') }}" style="display: inline-block;">
+                                <input type="hidden" name="next_url" value="{{ request.url }}">
+                                <button type="submit" class="btn btn-sm btn-danger">Decline</button>
+                            </form>
+                        {% elif not notification.is_read %}
+                            {# General Mark as Read button for other notifications #}
+                            <form method="POST" action="{{ url_for('mark_notification_as_read', notification_id=notification.id) }}" style="display: inline-block;">
+                                <input type="hidden" name="next_url" value="{{ request.url }}">
+                                <button type="submit" class="btn btn-sm btn-outline-secondary">Mark as Read</button>
+                            </form>
+                        {% else %}
+                            <small class="text-muted">Read</small>
+                        {% endif %}
+                    </div>
                 </li>
             {% endfor %}
         </ul>

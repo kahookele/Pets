@@ -165,6 +165,34 @@
         margin-bottom: 10px;
     }
 
+    /* Add these to your <style> block in profile.html or your CSS file */
+    .btn-ig-primary {
+        background-color: #3897f0; /* Instagram blue */
+        color: white;
+        border-color: #3897f0;
+    }
+    .btn-ig-primary:hover {
+        background-color: #2680d9;
+        color: white;
+    }
+    .btn-ig-secondary {
+        background-color: #efefef;
+        color: #262626;
+        border-color: #dbdbdb;
+    }
+    .btn-ig-secondary:hover {
+        background-color: #dbdbdb;
+    }
+    .btn-ig-danger {
+        background-color: #ed4956; /* Instagram red/pink for danger */
+        color: white;
+        border-color: #ed4956;
+    }
+    .btn-ig-danger:hover {
+        background-color: #c62d39;
+        color: white;
+    }
+
 </style>
 
 {# Main conditional block: can the user view this profile? #}
@@ -186,14 +214,31 @@
                     <div class="ig-action-buttons">
                         {% if is_own_profile %}
                             <a href="{{ url_for('edit_profile') }}" class="btn-ig">Edit profile</a>
-                            <a href="#" class="btn-ig">View archive</a>
+                            {# <a href="#" class="btn-ig">View archive</a> #}
                             <a href="{{ url_for('edit_profile') }}" title="Settings">
                                 <span class="settings-icon-ig"><i class="bi bi-gear-fill"></i></span>
                             </a>
                         {% else %}
-                            {# Example buttons for other users' viewable profiles (needs backend) #}
-                            <button type="button" class="btn-ig">Follow</button>
-                            <button type="button" class="btn-ig">Message</button>
+                            {# Friend status buttons for other users' profiles #}
+                            {% if friend_status == "friends" %}
+                                <button type="button" class="btn-ig btn-ig-secondary" disabled>Friends <i class="bi bi-check-lg"></i></button>
+                                {# Optional: Add an Unfriend button/logic here #}
+                                {% elif friend_status == "request_sent" %}
+                                <button type="button" class="btn-ig btn-ig-secondary" disabled>Request Sent</button>
+                                {# Optional: Add a Cancel Request button/logic here #}
+                            {% elif friend_status == "request_received" %}
+                                <form method="POST" action="{{ url_for('handle_friend_request', request_id=user.incoming_request_id, action='accept') }}" style="display: inline;">
+                                    <button type="submit" class="btn-ig btn-ig-primary">Accept Request</button>
+                                </form>
+                                <form method="POST" action="{{ url_for('handle_friend_request', request_id=user.incoming_request_id, action='decline') }}" style="display: inline;">
+                                    <button type="submit" class="btn-ig btn-ig-danger">Decline</button>
+                                </form>
+                            {% elif friend_status == "not_friends" %}
+                                <form method="POST" action="{{ url_for('send_friend_request', recipient_uid=target_user_uid) }}" style="display: inline;">
+                                    <button type="submit" class="btn-ig btn-ig-primary">Send Friend Request</button>
+                                </form>
+                            {% endif %}
+                             <button type="button" class="btn-ig">Message</button> {# Keep your message button #}
                         {% endif %}
                     </div>
                 </div>
@@ -220,7 +265,6 @@
     </div>
 {% else %}
     {# This is the LIMITED PUBLIC VIEW for PRIVATE profiles (can_view_profile is False) #}
-    {# We still expect 'user' data to be available from app.py to show some basics #}
     {% if user %}
         <div class="ig-profile-container">
             <header class="ig-profile-header">
@@ -234,7 +278,32 @@
                 <section class="ig-profile-info">
                     <div class="ig-info-row1">
                         <h2 class="ig-username">{{ user.username }}</h2>
-                        {# No action buttons here, or perhaps a "Request to Follow" button if you have that system #}
+                        {# === START MODIFICATION === #}
+                        {# Add action buttons here for private profiles, if not viewing own profile #}
+                        {% if not is_own_profile %}
+                            <div class="ig-action-buttons">
+                                {# Display relevant friend status button #}
+                                {% if friend_status == "request_sent" %}
+                                    <button type="button" class="btn-ig btn-ig-secondary" disabled>Request Sent</button>
+                                {% elif friend_status == "request_received" %}
+                                    {# User viewing this private profile has a pending request FROM this private user #}
+                                    <form method="POST" action="{{ url_for('handle_friend_request', request_id=user.incoming_request_id, action='accept') }}" style="display: inline;">
+                                        <button type="submit" class="btn-ig btn-ig-primary">Accept Request</button>
+                                    </form>
+                                    <form method="POST" action="{{ url_for('handle_friend_request', request_id=user.incoming_request_id, action='decline') }}" style="display: inline;">
+                                        <button type="submit" class="btn-ig btn-ig-danger">Decline</button>
+                                    </form>
+                                {% elif friend_status == "not_friends" %}
+                                    {# Not friends and no pending requests either way, show Send Friend Request #}
+                                    <form method="POST" action="{{ url_for('send_friend_request', recipient_uid=target_user_uid) }}" style="display: inline;">
+                                        <button type="submit" class="btn-ig btn-ig-primary">Send Friend Request</button>
+                                    </form>
+                                {% endif %}
+                                {# You can also include a message button if desired #}
+                                {# <button type="button" class="btn-ig">Message</button> #}
+                            </div>
+                        {% endif %}
+                        {# === END MODIFICATION === #}
                     </div>
                      {# Stats are kept private for this view #}
                      <ul class="ig-info-row2-stats" style="margin-top: 20px;">
@@ -244,7 +313,7 @@
                     </ul>
                     {# Optionally, you could show the bio here too if you want #}
                     {% if user.bio %}
-                        <div class="ig-info-row3-details" style="margin-top: 15px;"> {# Adjusted margin #}
+                        <div class="ig-info-row3-details" style="margin-top: 15px;">
                              <div class="ig-bio" style="font-size: 16px;">{{ user.bio }}</div>
                         </div>
                     {% endif %}
@@ -257,11 +326,12 @@
                 <i class="bi bi-lock-fill"></i>
                 <strong>This Account is Private</strong>
                 <p>Follow this account to see their photos and posts.</p>
-                {# If you implement a follow system, a "Request to Follow" button could go here #}
+                {# The "Send Friend Request" button is now up by the username. #}
+                {# You could also place it here if you prefer. #}
             </div>
         </div>
     {% else %}
-        {# Fallback if user data somehow wasn't passed, though app.py should prevent this #}
+        {# Fallback if user data somehow wasn't passed #}
         <div class="ig-profile-container private-profile-message">
             <p>This profile could not be loaded.</p>
         </div>
