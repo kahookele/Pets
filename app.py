@@ -634,8 +634,10 @@ def unfriend(friend_uid):
         friend_updates = {'friends': firestore.ArrayRemove([user_uid])}
 
         # Remove follower relationship
-        user_updates['followers_count'] = firestore.Increment(-1)
-        friend_updates['following_count'] = firestore.Increment(-1)
+        # The current user was following the friend, so decrement following_count
+        # The friend loses one follower
+        user_updates['following_count'] = firestore.Increment(-1)
+        friend_updates['followers_count'] = firestore.Increment(-1)
 
         batch.update(user_ref, user_updates)
         batch.update(friend_ref, friend_updates)
