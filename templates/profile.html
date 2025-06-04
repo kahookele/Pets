@@ -247,8 +247,8 @@
 
                 <ul class="ig-info-row2-stats">
                     <li class="ig-stat-item"><span class="count">0</span> posts</li>
-                    <li class="ig-stat-item"><span class="count">0</span> followers</li>
-                    <li class="ig-stat-item"><span class="count">0</span> following</li>
+                    <li class="ig-stat-item"><span class="count">{{ user.followers_count|default(0) }}</span> followers</li>
+                    <li class="ig-stat-item"><span class="count">{{ user.following_count|default(0) }}</span> following</li>
                 </ul>
 
                 <div class="ig-info-row3-details">
