@@ -565,18 +565,24 @@ def handle_friend_request(request_id, action):
     try:
         if action == 'accept':
             request_ref.update({'status': 'accepted', 'responded_at': firestore.SERVER_TIMESTAMP})
-            batch = db_firestore.batch()
+
             user_ref = db_firestore.collection('users').document(user_uid)
             sender_ref = db_firestore.collection('users').document(sender_uid)
+
+            # Fetch current counts to ensure they exist before incrementing
+            user_data = user_ref.get().to_dict() or {}
+            sender_data = sender_ref.get().to_dict() or {}
+
+            batch = db_firestore.batch()
             batch.update(user_ref, {
                 'friends': firestore.ArrayUnion([sender_uid]),
-                'followers_count': firestore.Increment(1),
-                'following_count': firestore.Increment(1)
+                'followers_count': user_data.get('followers_count', 0) + 1,
+                'following_count': user_data.get('following_count', 0) + 1
             })
             batch.update(sender_ref, {
                 'friends': firestore.ArrayUnion([user_uid]),
-                'followers_count': firestore.Increment(1),
-                'following_count': firestore.Increment(1)
+                'followers_count': sender_data.get('followers_count', 0) + 1,
+                'following_count': sender_data.get('following_count', 0) + 1
             })
             batch.commit()
 
@@ -634,11 +640,14 @@ def unfriend(friend_uid):
         user_updates = {'friends': firestore.ArrayRemove([friend_uid])}
         friend_updates = {'friends': firestore.ArrayRemove([user_uid])}
 
-        # Decrement follower/following counts
-        user_updates['followers_count'] = firestore.Increment(-1)
-        user_updates['following_count'] = firestore.Increment(-1)
-        friend_updates['followers_count'] = firestore.Increment(-1)
-        friend_updates['following_count'] = firestore.Increment(-1)
+        user_data = user_doc.to_dict() or {}
+        friend_data = friend_ref.get().to_dict() or {}
+
+        # Decrement follower/following counts based on existing values
+        user_updates['followers_count'] = max(user_data.get('followers_count', 1) - 1, 0)
+        user_updates['following_count'] = max(user_data.get('following_count', 1) - 1, 0)
+        friend_updates['followers_count'] = max(friend_data.get('followers_count', 1) - 1, 0)
+        friend_updates['following_count'] = max(friend_data.get('following_count', 1) - 1, 0)
 
         batch.update(user_ref, user_updates)
         batch.update(friend_ref, friend_updates)
