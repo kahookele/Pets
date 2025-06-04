@@ -37,6 +37,7 @@
           --sidebar-width-expanded-percentage: 13%;
           --sidebar-actual-width-narrow: 70px;
           --search-panel-width: 397px;
+          --notifications-panel-width: 350px;
       }
 
       html, body {
@@ -198,8 +199,58 @@
         color: var(--primary-text-color);
         border-radius: 4px;
     }
-    #liveSearchResultsContainer ul#resultsListPanel li:hover { 
-        background-color: var(--general-hover-bg-color); 
+    #liveSearchResultsContainer ul#resultsListPanel li:hover {
+        background-color: var(--general-hover-bg-color);
+    }
+
+    /* Notification Panel */
+    .notifications-panel {
+        position: fixed;
+        top: 0;
+        right: 0;
+        width: var(--notifications-panel-width);
+        height: 100vh;
+        background-color: var(--main-bg-color);
+        box-shadow: -2px 0 8px var(--divider-shadow-color);
+        z-index: 998;
+        display: flex;
+        flex-direction: column;
+        padding: 20px;
+        box-sizing: border-box;
+        transform: translateX(100%);
+        transition: transform 0.35s ease-in-out;
+    }
+    .notifications-panel.active {
+        transform: translateX(0);
+    }
+    .notifications-panel-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+    .notifications-panel-header h2 {
+        margin: 0;
+        font-size: 1.6rem;
+        font-weight: 600;
+        color: var(--primary-text-color);
+    }
+    .notifications-close {
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+        cursor: pointer;
+        color: var(--secondary-text-color);
+    }
+    .notifications-close:hover {
+        color: var(--primary-text-color);
+    }
+    #notificationsList { list-style-type: none; padding: 0; margin: 0; }
+    #notificationsList li { padding: 10px 0; border-bottom: 1px solid var(--border-color); }
+    #notificationsList li:last-child { border-bottom: none; }
+
+    @media (max-width: 600px) {
+        .notifications-panel { width: 100%; }
     }
 
     /* General Link Styling */
@@ -225,27 +276,35 @@
     </div>
   </div>
 
-  <div id="searchPanel" class="search-panel">
-      <div class="search-panel-header">
-          <h2>Search</h2>
-      </div>
-      <div class="search-panel-input-container">
-          <input type="text" id="panelSearchInput" placeholder="Search">
-      </div>
-      <div class="search-panel-recents">
-          <div class="recents-header">
-              <strong>Recent</strong>
-              <button id="clearRecentsButton">Clear all</button>
-          </div>
-          <ul id="recentSearchesList">
-              <!-- This list will now be empty by default -->
-              <!-- Your JavaScript will populate this later with actual recent searches -->
-          </ul>
-      </div>
-      <div id="liveSearchResultsContainer">
-          <ul id="resultsListPanel"></ul> 
-      </div>
-  </div>
+    <div id="searchPanel" class="search-panel">
+        <div class="search-panel-header">
+            <h2>Search</h2>
+        </div>
+        <div class="search-panel-input-container">
+            <input type="text" id="panelSearchInput" placeholder="Search">
+        </div>
+        <div class="search-panel-recents">
+            <div class="recents-header">
+                <strong>Recent</strong>
+                <button id="clearRecentsButton">Clear all</button>
+            </div>
+            <ul id="recentSearchesList">
+                <!-- This list will now be empty by default -->
+                <!-- Your JavaScript will populate this later with actual recent searches -->
+            </ul>
+        </div>
+        <div id="liveSearchResultsContainer">
+            <ul id="resultsListPanel"></ul>
+        </div>
+    </div>
+
+    <div id="notificationsPanel" class="notifications-panel">
+        <div class="notifications-panel-header">
+            <h2>Notifications</h2>
+            <button id="closeNotificationsPanel" class="notifications-close">&times;</button>
+        </div>
+        <ul id="notificationsList"></ul>
+    </div>
 
 </body>
 </html>
