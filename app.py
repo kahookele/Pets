@@ -109,7 +109,18 @@ def view_profile_page(view_username):
     follow_status = "not_following"
     is_following = logged_in_user_uid in target_user_data.get('followers', [])
 
-    if is_following:
+    incoming_request_doc = None
+    if not is_own_profile:
+        incoming_request_query = db_firestore.collection('follow_requests') \
+            .where('requesterId', '==', target_user_uid) \
+            .where('targetId', '==', logged_in_user_uid) \
+            .where('status', '==', 'pending').limit(1).stream()
+        incoming_request_doc = next(incoming_request_query, None)
+
+    if incoming_request_doc:
+        follow_status = "request_received"
+        target_user_data['incoming_request_id'] = incoming_request_doc.id
+    elif is_following:
         follow_status = "following"
     elif not is_own_profile:
         outgoing_request_query = db_firestore.collection('follow_requests') \
@@ -118,15 +129,6 @@ def view_profile_page(view_username):
             .where('status', '==', 'pending').limit(1).stream()
         if next(outgoing_request_query, None):
             follow_status = "request_sent"
-        else:
-            incoming_request_query = db_firestore.collection('follow_requests') \
-                .where('requesterId', '==', target_user_uid) \
-                .where('targetId', '==', logged_in_user_uid) \
-                .where('status', '==', 'pending').limit(1).stream()
-            incoming_request_doc = next(incoming_request_query, None)
-            if incoming_request_doc:
-                follow_status = "request_received"
-                target_user_data['incoming_request_id'] = incoming_request_doc.id
 
     can_view_profile = visibility == 'public' or is_own_profile or is_following
 
