@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block title %}Messages | Pet App{% endblock %}
+
+{% block content %}
+<h2>Start a Conversation</h2>
+<form method="get" action="{{ url_for('messages_home') }}">
+    <input type="text" name="q" placeholder="Search friends" value="{{ query|default('') }}">
+    <button type="submit">Search</button>
+</form>
+<ul>
+{% for friend in friends %}
+    <li><a href="{{ url_for('start_conversation', target_uid=friend.uid) }}">{{ friend.username }}</a></li>
+{% else %}
+    <li>No friends found.</li>
+{% endfor %}
+</ul>
+{% endblock %}

@@ -238,7 +238,7 @@
                                     <button type="submit" class="btn-ig btn-ig-primary">Send Friend Request</button>
                                 </form>
                             {% endif %}
-                             <button type="button" class="btn-ig">Message</button> {# Keep your message button #}
+                             <a href="{{ url_for('start_conversation', target_uid=target_user_uid) }}" class="btn-ig">Message</a>
                         {% endif %}
                     </div>
                 </div>
