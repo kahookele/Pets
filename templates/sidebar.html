@@ -444,6 +444,13 @@
       function openNotificationsPanel() {
           if (notificationsPanel) notificationsPanel.classList.add('active');
           fetchNotifications();
+          // Mark notifications as read when panel is opened
+          fetch('/mark_all_notifications_read', {method: 'POST'})
+            .then(() => {
+                const badge = notificationsToggle ? notificationsToggle.querySelector('.badge') : null;
+                if (badge) badge.remove();
+            })
+            .catch(() => console.error('Failed to mark notifications as read'));
       }
 
       function closeNotificationsPanelFn() {
