@@ -207,17 +207,17 @@
     .notifications-panel {
         position: fixed;
         top: 0;
-        left: var(--sidebar-actual-width-narrow);
+        left: var(--sidebar-width-expanded-percentage); 
         width: var(--notifications-panel-width);
         height: 100vh;
         background-color: var(--main-bg-color);
         box-shadow: 2px 0 8px var(--divider-shadow-color);
-        z-index: 998;
+        z-index: 998; 
         display: flex;
         flex-direction: column;
         padding: 20px;
         box-sizing: border-box;
-        transform: translateX(calc(-1 * var(--notifications-panel-width) - var(--sidebar-actual-width-narrow)));
+        transform: translateX(calc(-1 * var(--notifications-panel-width))); 
         transition: transform 0.35s ease-in-out;
     }
     .notifications-panel.active {
