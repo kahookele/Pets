@@ -225,7 +225,7 @@
             </a>
         </li>
         <li>
-            <a href="{{ url_for('notifications_page') }}" class="{{ 'active' if active_page == 'notifications' else '' }}">
+            <a href="{{ url_for('notifications_page') }}" id="notificationsToggle" class="{{ 'active' if active_page == 'notifications' else '' }}">
                 <span class="sidebar-icon"><i class="bi bi-hearts"></i></span>
                 <span class="sidebar-label">
                     Notifications
@@ -264,7 +264,12 @@
     const recentsContainer = document.querySelector('.search-panel-recents');
     const recentSearchesUL = document.getElementById('recentSearchesList'); // Corrected ID
     const clearRecentsButton = document.getElementById('clearRecentsButton');
-    const liveSearchResultsContainer = document.getElementById('liveSearchResultsContainer');
+      const liveSearchResultsContainer = document.getElementById('liveSearchResultsContainer');
+
+      const notificationsToggle = document.getElementById('notificationsToggle');
+      const notificationsPanel = document.getElementById('notificationsPanel');
+      const closeNotificationsPanel = document.getElementById('closeNotificationsPanel');
+      const notificationsList = document.getElementById('notificationsList');
 
 
     const RECENT_SEARCHES_KEY = 'petAppRecentSearches';
@@ -399,22 +404,75 @@
         }
     }
 
-    function closeSearchPanel() {
-        if (mainSidebar) mainSidebar.classList.remove('narrow');
-        if (searchPanel) searchPanel.classList.remove('active');
-        if (searchIconToggle) searchIconToggle.classList.remove('active');
-    }
+      function closeSearchPanel() {
+          if (mainSidebar) mainSidebar.classList.remove('narrow');
+          if (searchPanel) searchPanel.classList.remove('active');
+          if (searchIconToggle) searchIconToggle.classList.remove('active');
+      }
 
-    if (searchIconToggle) {
-        searchIconToggle.addEventListener('click', function (event) {
-            event.stopPropagation();
-            if (searchPanel && searchPanel.classList.contains('active')) {
-                closeSearchPanel();
-            } else {
-                openSearchPanel();
-            }
-        });
-    }
+      function fetchNotifications() {
+          if (!notificationsList) return;
+          notificationsList.innerHTML = '<li>Loading...</li>';
+          fetch('/api/notifications')
+            .then(res => res.json())
+            .then(data => {
+                notificationsList.innerHTML = '';
+                if (data.length === 0) {
+                    notificationsList.innerHTML = '<li>No notifications.</li>';
+                } else {
+                    data.forEach(notif => {
+                        const li = document.createElement('li');
+                        const linkStart = notif.link && notif.link !== '#' ? `<a href="${notif.link}">` : '';
+                        const linkEnd = notif.link && notif.link !== '#' ? '</a>' : '';
+                        const time = notif.timestamp ? new Date(notif.timestamp).toLocaleString() : '';
+                        li.innerHTML = `${linkStart}${notif.message}${linkEnd}<br><small>${time}</small>`;
+                        notificationsList.appendChild(li);
+                    });
+                }
+            })
+            .catch(() => {
+                notificationsList.innerHTML = '<li>Error loading notifications.</li>';
+            });
+      }
+
+      function openNotificationsPanel() {
+          if (notificationsPanel) notificationsPanel.classList.add('active');
+          fetchNotifications();
+      }
+
+      function closeNotificationsPanelFn() {
+          if (notificationsPanel) notificationsPanel.classList.remove('active');
+      }
+
+      if (searchIconToggle) {
+          searchIconToggle.addEventListener('click', function (event) {
+              event.stopPropagation();
+              if (searchPanel && searchPanel.classList.contains('active')) {
+                  closeSearchPanel();
+              } else {
+                  openSearchPanel();
+              }
+          });
+      }
+
+      if (notificationsToggle) {
+          notificationsToggle.addEventListener('click', function(event) {
+              event.preventDefault();
+              event.stopPropagation();
+              if (notificationsPanel && notificationsPanel.classList.contains('active')) {
+                  closeNotificationsPanelFn();
+              } else {
+                  openNotificationsPanel();
+              }
+          });
+      }
+
+      if (closeNotificationsPanel) {
+          closeNotificationsPanel.addEventListener('click', function(event){
+              event.stopPropagation();
+              closeNotificationsPanelFn();
+          });
+      }
 
     document.addEventListener('click', function(event) {
         if (searchPanel && searchPanel.classList.contains('active')) {
@@ -422,6 +480,13 @@
             const isClickOnSearchIconToggle = searchIconToggle ? searchIconToggle.contains(event.target) : false;
             if (!isClickInsideSearchPanel && !isClickOnSearchIconToggle) {
                 closeSearchPanel();
+            }
+        }
+        if (notificationsPanel && notificationsPanel.classList.contains('active')) {
+            const insideNotif = notificationsPanel.contains(event.target);
+            const onToggle = notificationsToggle ? notificationsToggle.contains(event.target) : false;
+            if (!insideNotif && !onToggle) {
+                closeNotificationsPanelFn();
             }
         }
     });
