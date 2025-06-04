@@ -220,24 +220,24 @@
                             </a>
                         {% else %}
                             {# Friend status buttons for other users' profiles #}
-                            {% if friend_status == "friends" %}
-                                <button type="button" class="btn-ig btn-ig-secondary" disabled>Friends <i class="bi bi-check-lg"></i></button>
-                                <form method="POST" action="{{ url_for('unfriend', friend_uid=target_user_uid) }}" style="display: inline;">
-                                    <button type="submit" class="btn-ig btn-ig-danger">Unfriend</button>
+                            {% if follow_status == "following" %}
+                                <button type="button" class="btn-ig btn-ig-secondary" disabled>Following <i class="bi bi-check-lg"></i></button>
+                                <form method="POST" action="{{ url_for('unfollow', other_uid=target_user_uid) }}" style="display: inline;">
+                                    <button type="submit" class="btn-ig btn-ig-danger">Unfollow</button>
                                 </form>
-                                {% elif friend_status == "request_sent" %}
+                                {% elif follow_status == "request_sent" %}
                                 <button type="button" class="btn-ig btn-ig-secondary" disabled>Request Sent</button>
                                 {# Optional: Add a Cancel Request button/logic here #}
-                            {% elif friend_status == "request_received" %}
-                                <form method="POST" action="{{ url_for('handle_friend_request', request_id=user.incoming_request_id, action='accept') }}" style="display: inline;">
+                            {% elif follow_status == "request_received" %}
+                                <form method="POST" action="{{ url_for('handle_follow_request', request_id=user.incoming_request_id, action='accept') }}" style="display: inline;">
                                     <button type="submit" class="btn-ig btn-ig-primary">Accept Request</button>
                                 </form>
-                                <form method="POST" action="{{ url_for('handle_friend_request', request_id=user.incoming_request_id, action='decline') }}" style="display: inline;">
+                                <form method="POST" action="{{ url_for('handle_follow_request', request_id=user.incoming_request_id, action='decline') }}" style="display: inline;">
                                     <button type="submit" class="btn-ig btn-ig-danger">Decline</button>
                                 </form>
-                            {% elif friend_status == "not_friends" %}
-                                <form method="POST" action="{{ url_for('send_friend_request', recipient_uid=target_user_uid) }}" style="display: inline;">
-                                    <button type="submit" class="btn-ig btn-ig-primary">Send Friend Request</button>
+                            {% elif follow_status == "not_following" %}
+                                <form method="POST" action="{{ url_for('send_follow_request', target_uid=target_user_uid) }}" style="display: inline;">
+                                    <button type="submit" class="btn-ig btn-ig-primary">Follow</button>
                                 </form>
                             {% endif %}
                              <a href="{{ url_for('start_conversation', target_uid=target_user_uid) }}" class="btn-ig">Message</a>
@@ -285,20 +285,20 @@
                         {% if not is_own_profile %}
                             <div class="ig-action-buttons">
                                 {# Display relevant friend status button #}
-                                {% if friend_status == "request_sent" %}
+                                {% if follow_status == "request_sent" %}
                                     <button type="button" class="btn-ig btn-ig-secondary" disabled>Request Sent</button>
-                                {% elif friend_status == "request_received" %}
+                                {% elif follow_status == "request_received" %}
                                     {# User viewing this private profile has a pending request FROM this private user #}
-                                    <form method="POST" action="{{ url_for('handle_friend_request', request_id=user.incoming_request_id, action='accept') }}" style="display: inline;">
+                                    <form method="POST" action="{{ url_for('handle_follow_request', request_id=user.incoming_request_id, action='accept') }}" style="display: inline;">
                                         <button type="submit" class="btn-ig btn-ig-primary">Accept Request</button>
                                     </form>
-                                    <form method="POST" action="{{ url_for('handle_friend_request', request_id=user.incoming_request_id, action='decline') }}" style="display: inline;">
+                                    <form method="POST" action="{{ url_for('handle_follow_request', request_id=user.incoming_request_id, action='decline') }}" style="display: inline;">
                                         <button type="submit" class="btn-ig btn-ig-danger">Decline</button>
                                     </form>
-                                {% elif friend_status == "not_friends" %}
-                                    {# Not friends and no pending requests either way, show Send Friend Request #}
-                                    <form method="POST" action="{{ url_for('send_friend_request', recipient_uid=target_user_uid) }}" style="display: inline;">
-                                        <button type="submit" class="btn-ig btn-ig-primary">Send Friend Request</button>
+                                {% elif follow_status == "not_following" %}
+                                    {# Not friends and no pending requests either way, show Follow #}
+                                    <form method="POST" action="{{ url_for('send_follow_request', target_uid=target_user_uid) }}" style="display: inline;">
+                                        <button type="submit" class="btn-ig btn-ig-primary">Follow</button>
                                     </form>
                                 {% endif %}
                                 {# You can also include a message button if desired #}
@@ -328,7 +328,7 @@
                 <i class="bi bi-lock-fill"></i>
                 <strong>This Account is Private</strong>
                 <p>Follow this account to see their photos and posts.</p>
-                {# The "Send Friend Request" button is now up by the username. #}
+                {# The "Follow" button is now up by the username. #}
                 {# You could also place it here if you prefer. #}
             </div>
         </div>
