@@ -222,7 +222,9 @@
                             {# Friend status buttons for other users' profiles #}
                             {% if friend_status == "friends" %}
                                 <button type="button" class="btn-ig btn-ig-secondary" disabled>Friends <i class="bi bi-check-lg"></i></button>
-                                {# Optional: Add an Unfriend button/logic here #}
+                                <form method="POST" action="{{ url_for('unfriend', friend_uid=target_user_uid) }}" style="display: inline;">
+                                    <button type="submit" class="btn-ig btn-ig-danger">Unfriend</button>
+                                </form>
                                 {% elif friend_status == "request_sent" %}
                                 <button type="button" class="btn-ig btn-ig-secondary" disabled>Request Sent</button>
                                 {# Optional: Add a Cancel Request button/logic here #}
