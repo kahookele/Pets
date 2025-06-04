@@ -207,7 +207,7 @@
     .notifications-panel {
         position: fixed;
         top: 0;
-        right: 0;
+        left: var(--sidebar-width-expanded-percentage);
         width: var(--notifications-panel-width);
         height: 100vh;
         background-color: var(--main-bg-color);
@@ -217,7 +217,7 @@
         flex-direction: column;
         padding: 20px;
         box-sizing: border-box;
-        transform: translateX(100%);
+        transform: translateX(calc(100vw - var(--sidebar-width-expanded-percentage)));
         transition: transform 0.35s ease-in-out;
     }
     .notifications-panel.active {
@@ -250,7 +250,10 @@
     #notificationsList li:last-child { border-bottom: none; }
 
     @media (max-width: 600px) {
-        .notifications-panel { width: 100%; }
+        .notifications-panel {
+            width: 100%;
+            left: 0;
+        }
     }
 
     /* General Link Styling */
