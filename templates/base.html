@@ -217,7 +217,7 @@
         flex-direction: column;
         padding: 20px;
         box-sizing: border-box;
-        transform: translateX(calc(-1 * var(--notifications-panel-width)));
+        transform: translateX(calc(-1 * var(--notifications-panel-width) - var(--sidebar-actual-width-narrow)));
         transition: transform 0.35s ease-in-out;
     }
     .notifications-panel.active {
