@@ -533,6 +533,29 @@ def notifications_page():
         })
     return render_template('notifications.html', notifications=user_notifications, active_page='notifications')
 
+
+@app.route('/api/notifications')
+@login_required
+def notifications_api():
+    user_uid = session.get('user_uid')
+    notifications_query = db_firestore.collection('notifications') \
+                                      .where('recipient_uid', '==', user_uid) \
+                                      .order_by('timestamp', direction=firestore.Query.DESCENDING) \
+                                      .stream()
+    user_notifications = []
+    for notif_doc in notifications_query:
+        notif_data = notif_doc.to_dict()
+        user_notifications.append({
+            'id': notif_doc.id,
+            'message': notif_data.get('message'),
+            'link': notif_data.get('link', '#'),
+            'timestamp': notif_data.get('timestamp').isoformat() if notif_data.get('timestamp') else None,
+            'is_read': notif_data.get('is_read', False),
+            'sender_name': notif_data.get('sender_name', 'System'),
+            'type': notif_data.get('type')
+        })
+    return jsonify(user_notifications)
+
 @app.route('/mark_notification_as_read/<string:notification_id>', methods=['POST']) # Changed to POST
 @login_required
 def mark_notification_as_read(notification_id):
