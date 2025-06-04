@@ -238,7 +238,12 @@
         <li>
             <a href="{{ url_for('messages_home') }}" class="{{ 'active' if active_page == 'messages' else '' }}">
                 <span class="sidebar-icon"><i class="bi bi-envelope-fill"></i></span>
-                <span class="sidebar-label">Messages</span>
+                <span class="sidebar-label">
+                    Messages
+                    {% if unread_message_count > 0 %}
+                        <span class="badge bg-danger ms-1">{{ unread_message_count }}</span>
+                    {% endif %}
+                </span>
             </a>
         </li>
         <li class="sidebar-dog-item">
@@ -266,10 +271,11 @@
     const clearRecentsButton = document.getElementById('clearRecentsButton');
       const liveSearchResultsContainer = document.getElementById('liveSearchResultsContainer');
 
-      const notificationsToggle = document.getElementById('notificationsToggle');
-      const notificationsPanel = document.getElementById('notificationsPanel');
-      const closeNotificationsPanel = document.getElementById('closeNotificationsPanel');
-      const notificationsList = document.getElementById('notificationsList');
+    const notificationsToggle = document.getElementById('notificationsToggle');
+    const notificationsPanel = document.getElementById('notificationsPanel');
+    const closeNotificationsPanel = document.getElementById('closeNotificationsPanel');
+    const clearNotificationsPanelBtn = document.getElementById('clearNotificationsPanel');
+    const notificationsList = document.getElementById('notificationsList');
 
 
     const RECENT_SEARCHES_KEY = 'petAppRecentSearches';
@@ -471,6 +477,17 @@
           closeNotificationsPanel.addEventListener('click', function(event){
               event.stopPropagation();
               closeNotificationsPanelFn();
+          });
+      }
+
+      if (clearNotificationsPanelBtn) {
+          clearNotificationsPanelBtn.addEventListener('click', function(event){
+              event.stopPropagation();
+              fetch('/mark_all_notifications_read', {method: 'POST'})
+                .then(() => { notificationsList.innerHTML = '<li>No notifications.</li>'; })
+                .catch(() => console.error('Failed to clear notifications'));
+              const badge = notificationsToggle ? notificationsToggle.querySelector('.badge') : null;
+              if (badge) badge.remove();
           });
       }
 
