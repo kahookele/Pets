@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Edit Password | Pet App{% endblock %}
+{% block title %}Messages | Pet App{% endblock %}
 
 {% block content %}
 
@@ -8,7 +8,21 @@
 <h2>Conversation: {{ conversation_id }}</h2>
 <div id="chat-box">
     {% for message in messages %}
-        <p><b>{{ message.sender }}:</b> {{ message.text }} <i>{{ message.timestamp }}</i></p>
+        <p>
+            <strong>{{ message.sender_name }}</strong>:
+            {{ message.text }}
+            {% if message.edited %}<em>(edited)</em>{% endif %}
+            <small>{{ message.timestamp }}</small>
+            {% if session['user_uid'] == message.sender_uid %}
+                <form method="post" action="{{ url_for('delete_message', conversation_id=conversation_id, message_id=message.id) }}" style="display:inline">
+                    <button type="submit">Delete</button>
+                </form>
+                <form method="post" action="{{ url_for('edit_message', conversation_id=conversation_id, message_id=message.id) }}" style="display:inline">
+                    <input type="text" name="new_text" placeholder="Edit message" required>
+                    <button type="submit">Update</button>
+                </form>
+            {% endif %}
+        </p>
     {% endfor %}
 </div>
 <form method="post">

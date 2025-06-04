@@ -354,25 +354,86 @@ def search_users():
     return jsonify(results)
 
 
+def get_or_create_conversation(uid1, uid2):
+    """Return a consistent conversation id for two users and ensure document exists."""
+    sorted_ids = sorted([uid1, uid2])
+    conv_id = f"{sorted_ids[0]}_{sorted_ids[1]}"
+    conv_ref = db_firestore.collection('conversations').document(conv_id)
+    conv_ref.set({'participants': sorted_ids}, merge=True)
+    return conv_id
+
+
+@app.route('/start_conversation/<string:target_uid>')
+@login_required
+def start_conversation(target_uid):
+    user_uid = session.get('user_uid')
+    conv_id = get_or_create_conversation(user_uid, target_uid)
+    return redirect(url_for('direct_messages', conversation_id=conv_id))
+
+
+@app.route('/messages', methods=['GET'])
+@login_required
+def messages_home():
+    """Simple page to search friends and start conversations."""
+    user_uid = session.get('user_uid')
+    user_doc = db_firestore.collection('users').document(user_uid).get()
+    friend_ids = user_doc.to_dict().get('friends', []) if user_doc.exists else []
+    friends = []
+    for f_uid in friend_ids:
+        doc = db_firestore.collection('users').document(f_uid).get()
+        if doc.exists:
+            data = doc.to_dict()
+            friends.append({'uid': f_uid, 'username': data.get('username')})
+
+    query = request.args.get('q', '').strip().lower()
+    if query:
+        friends = [f for f in friends if query in f['username'].lower()]
+
+    return render_template('messages_home.html', friends=friends, query=query, active_page='messages')
+
+
 @app.route('/direct_messages/<conversation_id>', methods=['GET', 'POST'])
 @login_required
 def direct_messages(conversation_id):
-    # ... (your existing direct_messages logic)
     messages_ref = db_firestore.collection('conversations').document(conversation_id).collection('messages')
-    if request.method == 'POST':
+
+    if request.method == 'POST' and 'message' in request.form:
         sender_name = session.get('display_name', 'Anonymous')
+        sender_uid = session.get('user_uid')
         text = request.form.get('message')
         if text:
             messages_ref.add({
                 'sender_name': sender_name,
+                'sender_uid': sender_uid,
                 'text': text,
                 'timestamp': firestore.SERVER_TIMESTAMP
             })
         return redirect(url_for('direct_messages', conversation_id=conversation_id))
 
     messages_query = messages_ref.order_by('timestamp', direction=firestore.Query.ASCENDING).stream()
-    message_list = [msg.to_dict() for msg in messages_query]
+    message_list = [{'id': m.id, **m.to_dict()} for m in messages_query]
     return render_template('direct_messages.html', messages=message_list, conversation_id=conversation_id)
+
+
+@app.route('/edit_message/<conversation_id>/<message_id>', methods=['POST'])
+@login_required
+def edit_message(conversation_id, message_id):
+    new_text = request.form.get('new_text', '').strip()
+    msg_ref = db_firestore.collection('conversations').document(conversation_id).collection('messages').document(message_id)
+    msg_doc = msg_ref.get()
+    if msg_doc.exists and msg_doc.to_dict().get('sender_uid') == session.get('user_uid') and new_text:
+        msg_ref.update({'text': new_text, 'edited': True})
+    return redirect(url_for('direct_messages', conversation_id=conversation_id))
+
+
+@app.route('/delete_message/<conversation_id>/<message_id>', methods=['POST'])
+@login_required
+def delete_message(conversation_id, message_id):
+    msg_ref = db_firestore.collection('conversations').document(conversation_id).collection('messages').document(message_id)
+    msg_doc = msg_ref.get()
+    if msg_doc.exists and msg_doc.to_dict().get('sender_uid') == session.get('user_uid'):
+        msg_ref.delete()
+    return redirect(url_for('direct_messages', conversation_id=conversation_id))
 
 
 # --- Friend Request Routes ---
