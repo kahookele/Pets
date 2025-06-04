@@ -41,13 +41,13 @@
                     
                     {# Action buttons section #}
                     <div class="mt-2">
-                        {% if notification.type == 'friend_request' and not notification.is_read and notification.request_id %}
+                        {% if notification.type == 'follow_request' and not notification.is_read and notification.request_id %}
                             {# Friend Request Actions #}
-                            <form method="POST" action="{{ url_for('handle_friend_request', request_id=notification.request_id, action='accept') }}" style="display: inline-block; margin-right: 5px;">
+                            <form method="POST" action="{{ url_for('handle_follow_request', request_id=notification.request_id, action='accept') }}" style="display: inline-block; margin-right: 5px;">
                                 <input type="hidden" name="next_url" value="{{ request.url }}">
                                 <button type="submit" class="btn btn-sm btn-success">Accept</button>
                             </form>
-                            <form method="POST" action="{{ url_for('handle_friend_request', request_id=notification.request_id, action='decline') }}" style="display: inline-block;">
+                            <form method="POST" action="{{ url_for('handle_follow_request', request_id=notification.request_id, action='decline') }}" style="display: inline-block;">
                                 <input type="hidden" name="next_url" value="{{ request.url }}">
                                 <button type="submit" class="btn btn-sm btn-danger">Decline</button>
                             </form>

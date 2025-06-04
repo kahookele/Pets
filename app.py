@@ -65,7 +65,7 @@ def get_username(user_uid):
     return 'Unknown User'
 
 # --- Your existing routes (home, profile, edit_profile, etc. 그대로 유지) ---
-# Make sure view_profile_page is updated as in the previous detailed response to include friend_status
+# view_profile_page now includes follow_status logic
 @app.route("/")
 @login_required
 def home():
@@ -105,36 +105,36 @@ def view_profile_page(view_username):
     is_own_profile = (target_user_uid == logged_in_user_uid)
     visibility = target_user_data.get('profile_visibility', 'private')
     
-    # Friend Status Logic (ensure this is present and correct)
-    friend_status = "not_friends"
-    are_friends = logged_in_user_uid in target_user_data.get('friends', [])
+    # Follow Status Logic
+    follow_status = "not_following"
+    is_following = logged_in_user_uid in target_user_data.get('followers', [])
 
-    if are_friends:
-        friend_status = "friends"
+    if is_following:
+        follow_status = "following"
     elif not is_own_profile:
-        outgoing_request_query = db_firestore.collection('friend_requests') \
-            .where('fromUserId', '==', logged_in_user_uid) \
-            .where('toUserId', '==', target_user_uid) \
+        outgoing_request_query = db_firestore.collection('follow_requests') \
+            .where('requesterId', '==', logged_in_user_uid) \
+            .where('targetId', '==', target_user_uid) \
             .where('status', '==', 'pending').limit(1).stream()
         if next(outgoing_request_query, None):
-            friend_status = "request_sent"
+            follow_status = "request_sent"
         else:
-            incoming_request_query = db_firestore.collection('friend_requests') \
-                .where('fromUserId', '==', target_user_uid) \
-                .where('toUserId', '==', logged_in_user_uid) \
+            incoming_request_query = db_firestore.collection('follow_requests') \
+                .where('requesterId', '==', target_user_uid) \
+                .where('targetId', '==', logged_in_user_uid) \
                 .where('status', '==', 'pending').limit(1).stream()
             incoming_request_doc = next(incoming_request_query, None)
             if incoming_request_doc:
-                friend_status = "request_received"
+                follow_status = "request_received"
                 target_user_data['incoming_request_id'] = incoming_request_doc.id
-    
-    can_view_profile = visibility == 'public' or is_own_profile or are_friends # Friends can view private profiles
+
+    can_view_profile = visibility == 'public' or is_own_profile or is_following
 
     return render_template("profile.html",
                            user=target_user_data,
                            is_own_profile=is_own_profile,
                            can_view_profile=can_view_profile,
-                           friend_status=friend_status,
+                           follow_status=follow_status,
                            target_user_uid=target_user_uid,
                            active_page='profile')
 
@@ -316,6 +316,8 @@ def signup():
                 'created_at': firestore.SERVER_TIMESTAMP,
                 'profile_visibility': 'private',
                 'friends': [],  # Initialize empty friends list
+                'followers': [],
+                'following': [],
                 'followers_count': 0,
                 'following_count': 0
             }
@@ -471,235 +473,181 @@ def delete_message(conversation_id, message_id):
     return redirect(url_for('direct_messages', conversation_id=conversation_id))
 
 
-# --- Friend Request Routes ---
-@app.route('/send_friend_request/<string:recipient_uid>', methods=['POST'])
-@login_required
-def send_friend_request(recipient_uid):
-    sender_uid = session['user_uid']
-    sender_username = session.get('display_name', get_username(sender_uid)) # Use session display_name first
-    recipient_username = get_username(recipient_uid)
 
-    if sender_uid == recipient_uid:
-        flash("You cannot send a friend request to yourself.", "error")
+# --- Follow Request Routes ---
+@app.route('/send_follow_request/<string:target_uid>', methods=['POST'])
+@login_required
+def send_follow_request(target_uid):
+    follower_uid = session['user_uid']
+    follower_name = session.get('display_name', get_username(follower_uid))
+    target_name = get_username(target_uid)
+
+    if follower_uid == target_uid:
+        flash("You cannot follow yourself.", "error")
         return redirect(request.referrer or url_for('home'))
 
-    # Check if already friends or request pending (as in previous response)
-    # ... (add checks here for existing friendship or pending request to prevent duplicates)
-    # For brevity, assuming checks from previous response are in place. If not, add them:
-    sender_doc_snap = db_firestore.collection('users').document(sender_uid).get()
-    if sender_doc_snap.exists and recipient_uid in sender_doc_snap.to_dict().get('friends', []):
-        flash(f"You are already friends with {recipient_username}.", "info")
-        return redirect(request.referrer or url_for('view_profile_page', view_username=recipient_username))
+    target_doc = db_firestore.collection('users').document(target_uid).get()
+    if target_doc.exists and follower_uid in target_doc.to_dict().get('followers', []):
+        flash(f"You already follow {target_name}.", "info")
+        return redirect(request.referrer or url_for('view_profile_page', view_username=target_name))
 
-    # Check for existing pending request (either way)
-    req_query_outgoing = db_firestore.collection('friend_requests') \
-        .where('fromUserId', '==', sender_uid) \
-        .where('toUserId', '==', recipient_uid) \
+    pending_query = db_firestore.collection('follow_requests') \
+        .where('requesterId', '==', follower_uid) \
+        .where('targetId', '==', target_uid) \
         .where('status', '==', 'pending').limit(1).stream()
-    req_query_incoming = db_firestore.collection('friend_requests') \
-        .where('fromUserId', '==', recipient_uid) \
-        .where('toUserId', '==', sender_uid) \
-        .where('status', '==', 'pending').limit(1).stream()
-
-    if next(req_query_outgoing, None) or next(req_query_incoming, None):
-        flash("A friend request is already pending or you've already sent one.", "info")
-        return redirect(request.referrer or url_for('view_profile_page', view_username=recipient_username))
-
+    if next(pending_query, None):
+        flash("Follow request already sent.", "info")
+        return redirect(request.referrer or url_for('view_profile_page', view_username=target_name))
 
     try:
-        request_doc_ref = db_firestore.collection('friend_requests').document()
-        request_id = request_doc_ref.id
-        
-        request_doc_ref.set({
-            'fromUserId': sender_uid,
-            'fromUsername': sender_username,
-            'toUserId': recipient_uid,
-            'toUsername': recipient_username,
+        req_ref = db_firestore.collection('follow_requests').document()
+        req_id = req_ref.id
+        req_ref.set({
+            'requesterId': follower_uid,
+            'targetId': target_uid,
             'status': 'pending',
             'timestamp': firestore.SERVER_TIMESTAMP
         })
 
         db_firestore.collection('notifications').add({
-            'recipient_uid': recipient_uid,
-            'sender_uid': sender_uid,
-            'sender_name': sender_username,
-            'message': f"{sender_username} sent you a friend request.",
-            'link': url_for('view_profile_page', view_username=sender_username), # Link to sender's profile
-            'type': 'friend_request',
-            'request_id': request_id,
+            'recipient_uid': target_uid,
+            'sender_uid': follower_uid,
+            'sender_name': follower_name,
+            'message': f"{follower_name} requested to follow you.",
+            'link': url_for('view_profile_page', view_username=follower_name),
+            'type': 'follow_request',
+            'request_id': req_id,
             'is_read': False,
             'timestamp': firestore.SERVER_TIMESTAMP
         })
-        flash(f"Friend request sent to {recipient_username}.", "success")
+        flash(f"Follow request sent to {target_name}.", "success")
     except Exception as e:
-        flash(f"Error sending friend request: {e}", "error")
-    
-    return redirect(request.referrer or url_for('view_profile_page', view_username=recipient_username))
+        flash(f"Error sending follow request: {e}", "error")
+
+    return redirect(request.referrer or url_for('view_profile_page', view_username=target_name))
 
 
-@app.route('/handle_friend_request/<string:request_id>/<string:action>', methods=['POST'])
+@app.route('/handle_follow_request/<string:request_id>/<string:action>', methods=['POST'])
 @login_required
-def handle_friend_request(request_id, action):
-    user_uid = session['user_uid'] # This is the Recipient of the friend request
+def handle_follow_request(request_id, action):
+    user_uid = session['user_uid']
     current_username = session.get('display_name', get_username(user_uid))
-    
-    request_ref = db_firestore.collection('friend_requests').document(request_id)
-    request_doc = request_ref.get()
 
-    if not request_doc.exists:
-        flash("Friend request not found.", "error")
+    req_ref = db_firestore.collection('follow_requests').document(request_id)
+    req_doc = req_ref.get()
+
+    if not req_doc.exists:
+        flash("Follow request not found.", "error")
         return redirect(request.form.get('next_url') or url_for('notifications_page'))
 
-    request_data = request_doc.to_dict()
-    if request_data.get('toUserId') != user_uid:
+    req_data = req_doc.to_dict()
+    if req_data.get('targetId') != user_uid:
         flash("You are not authorized to act on this request.", "error")
         return redirect(request.form.get('next_url') or url_for('notifications_page'))
-    
-    if request_data.get('status') != 'pending':
+
+    if req_data.get('status') != 'pending':
         flash("This request has already been actioned.", "info")
         return redirect(request.form.get('next_url') or url_for('notifications_page'))
 
-    sender_uid = request_data.get('fromUserId') # This is the Sender of the friend request
-    sender_username = request_data.get('fromUsername', get_username(sender_uid))
+    requester_uid = req_data.get('requesterId')
+    requester_username = get_username(requester_uid)
 
     try:
         if action == 'accept':
-            request_ref.update({'status': 'accepted', 'responded_at': firestore.SERVER_TIMESTAMP})
-            batch = db_firestore.batch()
-            
-            recipient_ref = db_firestore.collection('users').document(user_uid) # Recipient (current user)
-            sender_ref = db_firestore.collection('users').document(sender_uid)    # Sender (who sent request)
+            req_ref.update({'status': 'accepted', 'responded_at': firestore.SERVER_TIMESTAMP})
 
-            # Logic: Sender is now following Recipient
-            # Recipient (user_uid) gains a follower.
-            batch.update(recipient_ref, {
-                'friends': firestore.ArrayUnion([sender_uid]),
+            follow_id = f"{requester_uid}_{user_uid}"
+            db_firestore.collection('follows').document(follow_id).set({
+                'followerId': requester_uid,
+                'followingId': user_uid,
+                'timestamp': firestore.SERVER_TIMESTAMP
+            })
+
+            batch = db_firestore.batch()
+            target_ref = db_firestore.collection('users').document(user_uid)
+            requester_ref = db_firestore.collection('users').document(requester_uid)
+            batch.update(target_ref, {
+                'followers': firestore.ArrayUnion([requester_uid]),
                 'followers_count': firestore.Increment(1)
             })
-            # Sender (sender_uid) is now following one more person.
-            batch.update(sender_ref, {
-                'friends': firestore.ArrayUnion([user_uid]),
+            batch.update(requester_ref, {
+                'following': firestore.ArrayUnion([user_uid]),
                 'following_count': firestore.Increment(1)
             })
             batch.commit()
 
             db_firestore.collection('notifications').add({
-                'recipient_uid': sender_uid,
+                'recipient_uid': requester_uid,
                 'sender_uid': user_uid,
                 'sender_name': current_username,
-                'message': f"{current_username} accepted your friend request.",
+                'message': f"{current_username} accepted your follow request.",
                 'link': url_for('view_profile_page', view_username=current_username),
-                'type': 'friend_request_accepted',
+                'type': 'follow_request_accepted',
                 'is_read': False,
                 'timestamp': firestore.SERVER_TIMESTAMP
             })
-            flash(f"You are now friends with {sender_username}!", "success")
+            flash(f"You have a new follower: {requester_username}.", "success")
 
         elif action == 'decline':
-            request_ref.update({'status': 'declined', 'responded_at': firestore.SERVER_TIMESTAMP})
-            flash(f"Friend request from {sender_username} declined.", "info")
-        
+            req_ref.delete()
+            flash(f"Follow request from {requester_username} declined.", "info")
+
         if action in ['accept', 'decline']:
             notif_query = db_firestore.collection('notifications') \
                 .where('request_id', '==', request_id) \
                 .where('recipient_uid', '==', user_uid) \
-                .where('type', '==', 'friend_request') \
+                .where('type', '==', 'follow_request') \
                 .limit(1).stream()
-            for notif_doc_to_update in notif_query:
-                notif_doc_to_update.reference.update({'is_read': True})
-                
+            for notif_doc in notif_query:
+                notif_doc.reference.update({'is_read': True})
+
     except Exception as e:
-        flash(f"Error handling friend request: {e}", "error")
+        flash(f"Error handling follow request: {e}", "error")
 
     return redirect(request.form.get('next_url') or request.referrer or url_for('notifications_page'))
-
-# In app.py
-
-@app.route('/unfriend/<string:friend_uid>', methods=['POST']) # Renamed friend_uid to other_user_uid for clarity
+# --- Removed friend_requests_page route as it's no longer needed ---
+@app.route('/unfollow/<string:other_uid>', methods=['POST'])
 @login_required
-def unfriend(friend_uid):
-    current_user_uid = session['user_uid']
+def unfollow(other_uid):
+    current_uid = session['user_uid']
 
-    # Check if they are actually friends (this is a basic check from current user's perspective)
-    # More robust check will be to find the accepted friend request.
-    current_user_doc_snap = db_firestore.collection('users').document(current_user_uid).get()
-    if not current_user_doc_snap.exists or \
-       friend_uid not in current_user_doc_snap.to_dict().get('friends', []):
-        flash("You are not friends with this user or an error occurred.", "error")
-        # Attempt to redirect to other user's profile if possible, otherwise home
-        other_username_for_redirect = get_username(friend_uid)
-        if other_username_for_redirect != 'Unknown User':
-            return redirect(url_for('view_profile_page', view_username=other_username_for_redirect))
-        return redirect(request.referrer or url_for('home'))
+    follow_doc1 = db_firestore.collection('follows').document(f"{current_uid}_{other_uid}").get()
+    follow_doc2 = db_firestore.collection('follows').document(f"{other_uid}_{current_uid}").get()
 
-    original_sender_uid = None
-    original_recipient_uid = None
-
-    # Scenario 1: Current user sent the request to other_user, other_user accepted.
-    # So, current_user was original_sender, other_user was original_recipient.
-    req_query1 = db_firestore.collection('friend_requests') \
-        .where('fromUserId', '==', current_user_uid) \
-        .where('toUserId', '==', friend_uid) \
-        .where('status', '==', 'accepted').limit(1).stream()
-    
-    request_doc_found = next(req_query1, None)
-    if request_doc_found:
-        original_sender_uid = current_user_uid
-        original_recipient_uid = friend_uid
+    if follow_doc1.exists:
+        follower_uid = current_uid
+        following_uid = other_uid
+        follow_doc_id = f"{current_uid}_{other_uid}"
+    elif follow_doc2.exists:
+        follower_uid = other_uid
+        following_uid = current_uid
+        follow_doc_id = f"{other_uid}_{current_uid}"
     else:
-        # Scenario 2: other_user sent the request to current_user, current_user accepted.
-        # So, other_user was original_sender, current_user was original_recipient.
-        req_query2 = db_firestore.collection('friend_requests') \
-            .where('fromUserId', '==', friend_uid) \
-            .where('toUserId', '==', current_user_uid) \
-            .where('status', '==', 'accepted').limit(1).stream()
-        request_doc_found = next(req_query2, None)
-        if request_doc_found:
-            original_sender_uid = friend_uid
-            original_recipient_uid = current_user_uid
+        flash("Follow relationship not found.", "error")
+        other_username = get_username(other_uid)
+        return redirect(request.referrer or url_for('view_profile_page', view_username=other_username))
 
-    other_user_username = get_username(friend_uid) # For flash message and redirect
+    follower_ref = db_firestore.collection('users').document(follower_uid)
+    following_ref = db_firestore.collection('users').document(following_uid)
 
-    if not original_sender_uid or not original_recipient_uid:
-        # This means no accepted friend request was found, which is strange if they are in 'friends' list.
-        # This could happen if friend_requests documents are deleted or data is inconsistent.
-        # As a fallback, remove from friends lists but flash a warning about counts.
-        flash(f"Could not verify the original friend connection with {other_user_username}. Removing friend status, but please check follower/following counts if they seem off.", "warning")
-        try:
-            batch_fallback = db_firestore.batch()
-            current_user_ref_fallback = db_firestore.collection('users').document(current_user_uid)
-            other_user_ref_fallback = db_firestore.collection('users').document(friend_uid)
-            batch_fallback.update(current_user_ref_fallback, {'friends': firestore.ArrayRemove([friend_uid])})
-            batch_fallback.update(other_user_ref_fallback, {'friends': firestore.ArrayRemove([current_user_uid])})
-            batch_fallback.commit()
-        except Exception as e_fallback:
-            flash(f"Error during fallback unfriend: {e_fallback}", "error")
-        return redirect(url_for('view_profile_page', view_username=other_user_username))
-
-    sender_ref = db_firestore.collection('users').document(original_sender_uid)
-    recipient_ref = db_firestore.collection('users').document(original_recipient_uid)
-    
     try:
         batch = db_firestore.batch()
-
-        # Decrement following_count for the original_sender_uid
-        batch.update(sender_ref, {
-            'friends': firestore.ArrayRemove([original_recipient_uid]),
+        batch.update(follower_ref, {
+            'following': firestore.ArrayRemove([following_uid]),
             'following_count': firestore.Increment(-1)
         })
-        # Decrement followers_count for the original_recipient_uid
-        batch.update(recipient_ref, {
-            'friends': firestore.ArrayRemove([original_sender_uid]),
+        batch.update(following_ref, {
+            'followers': firestore.ArrayRemove([follower_uid]),
             'followers_count': firestore.Increment(-1)
         })
         batch.commit()
-        flash(f"You are no longer friends with {other_user_username}.", "info")
+        db_firestore.collection('follows').document(follow_doc_id).delete()
+        flash("Follow removed.", "info")
     except Exception as e:
-        flash(f"Error removing friend: {e}", "error")
+        flash(f"Error updating follow status: {e}", "error")
 
-    return redirect(url_for('view_profile_page', view_username=other_user_username))
-
-# --- Removed friend_requests_page route as it's no longer needed ---
+    other_username = get_username(other_uid)
+    return redirect(url_for('view_profile_page', view_username=other_username))
 
 @app.route('/notifications')
 @login_required
