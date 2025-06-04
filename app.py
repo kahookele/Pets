@@ -600,6 +600,49 @@ def handle_friend_request(request_id, action):
 
     return redirect(request.form.get('next_url') or request.referrer or url_for('notifications_page'))
 
+@app.route('/unfriend/<string:friend_uid>', methods=['POST'])
+@login_required
+def unfriend(friend_uid):
+    """Remove a user from the current user's friends list."""
+    user_uid = session['user_uid']
+
+    user_ref = db_firestore.collection('users').document(user_uid)
+    friend_ref = db_firestore.collection('users').document(friend_uid)
+
+    user_doc = user_ref.get()
+    if not user_doc.exists or friend_uid not in user_doc.to_dict().get('friends', []):
+        flash("User is not in your friends list.", "error")
+        return redirect(request.referrer or url_for('home'))
+
+    friend_username = get_username(friend_uid)
+
+    try:
+        batch = db_firestore.batch()
+
+        user_updates = {'friends': firestore.ArrayRemove([friend_uid])}
+        friend_updates = {'friends': firestore.ArrayRemove([user_uid])}
+
+        # Decrement follower/following counts if those fields exist
+        user_data = user_doc.to_dict() or {}
+        friend_data = friend_ref.get().to_dict() or {}
+        if 'followers_count' in user_data:
+            user_updates['followers_count'] = firestore.Increment(-1)
+        if 'following_count' in user_data:
+            user_updates['following_count'] = firestore.Increment(-1)
+        if 'followers_count' in friend_data:
+            friend_updates['followers_count'] = firestore.Increment(-1)
+        if 'following_count' in friend_data:
+            friend_updates['following_count'] = firestore.Increment(-1)
+
+        batch.update(user_ref, user_updates)
+        batch.update(friend_ref, friend_updates)
+        batch.commit()
+        flash(f"You are no longer friends with {friend_username}.", "info")
+    except Exception as e:
+        flash(f"Error removing friend: {e}", "error")
+
+    return redirect(url_for('view_profile_page', view_username=friend_username))
+
 # --- Removed friend_requests_page route as it's no longer needed ---
 
 @app.route('/notifications')
