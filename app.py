@@ -99,6 +99,8 @@ def view_profile_page(view_username):
         return redirect(url_for('home'))
 
     target_user_data = target_user_doc.to_dict()
+    target_user_data['followers_count'] = target_user_data.get('followers_count', 0)
+    target_user_data['following_count'] = target_user_data.get('following_count', 0)
     target_user_uid = target_user_doc.id
     is_own_profile = (target_user_uid == logged_in_user_uid)
     visibility = target_user_data.get('profile_visibility', 'private')
@@ -313,7 +315,9 @@ def signup():
                 'email': email,
                 'created_at': firestore.SERVER_TIMESTAMP,
                 'profile_visibility': 'private',
-                'friends': [] # Initialize empty friends list
+                'friends': [],  # Initialize empty friends list
+                'followers_count': 0,
+                'following_count': 0
             }
             db_firestore.collection('users').document(user_record.uid).set(user_data)
 
@@ -564,8 +568,16 @@ def handle_friend_request(request_id, action):
             batch = db_firestore.batch()
             user_ref = db_firestore.collection('users').document(user_uid)
             sender_ref = db_firestore.collection('users').document(sender_uid)
-            batch.update(user_ref, {'friends': firestore.ArrayUnion([sender_uid])})
-            batch.update(sender_ref, {'friends': firestore.ArrayUnion([user_uid])})
+            batch.update(user_ref, {
+                'friends': firestore.ArrayUnion([sender_uid]),
+                'followers_count': firestore.Increment(1),
+                'following_count': firestore.Increment(1)
+            })
+            batch.update(sender_ref, {
+                'friends': firestore.ArrayUnion([user_uid]),
+                'followers_count': firestore.Increment(1),
+                'following_count': firestore.Increment(1)
+            })
             batch.commit()
 
             db_firestore.collection('notifications').add({
@@ -622,17 +634,11 @@ def unfriend(friend_uid):
         user_updates = {'friends': firestore.ArrayRemove([friend_uid])}
         friend_updates = {'friends': firestore.ArrayRemove([user_uid])}
 
-        # Decrement follower/following counts if those fields exist
-        user_data = user_doc.to_dict() or {}
-        friend_data = friend_ref.get().to_dict() or {}
-        if 'followers_count' in user_data:
-            user_updates['followers_count'] = firestore.Increment(-1)
-        if 'following_count' in user_data:
-            user_updates['following_count'] = firestore.Increment(-1)
-        if 'followers_count' in friend_data:
-            friend_updates['followers_count'] = firestore.Increment(-1)
-        if 'following_count' in friend_data:
-            friend_updates['following_count'] = firestore.Increment(-1)
+        # Decrement follower/following counts
+        user_updates['followers_count'] = firestore.Increment(-1)
+        user_updates['following_count'] = firestore.Increment(-1)
+        friend_updates['followers_count'] = firestore.Increment(-1)
+        friend_updates['following_count'] = firestore.Increment(-1)
 
         batch.update(user_ref, user_updates)
         batch.update(friend_ref, friend_updates)
