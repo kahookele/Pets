@@ -540,7 +540,7 @@ def send_friend_request(recipient_uid):
 @app.route('/handle_friend_request/<string:request_id>/<string:action>', methods=['POST'])
 @login_required
 def handle_friend_request(request_id, action):
-    user_uid = session['user_uid']
+    user_uid = session['user_uid'] # This is the Recipient of the friend request
     current_username = session.get('display_name', get_username(user_uid))
     
     request_ref = db_firestore.collection('friend_requests').document(request_id)
@@ -559,20 +559,24 @@ def handle_friend_request(request_id, action):
         flash("This request has already been actioned.", "info")
         return redirect(request.form.get('next_url') or url_for('notifications_page'))
 
-    sender_uid = request_data.get('fromUserId')
+    sender_uid = request_data.get('fromUserId') # This is the Sender of the friend request
     sender_username = request_data.get('fromUsername', get_username(sender_uid))
 
     try:
         if action == 'accept':
             request_ref.update({'status': 'accepted', 'responded_at': firestore.SERVER_TIMESTAMP})
             batch = db_firestore.batch()
-            user_ref = db_firestore.collection('users').document(user_uid)
-            sender_ref = db_firestore.collection('users').document(sender_uid)
-            # The recipient gains a follower and the sender is now following
-            batch.update(user_ref, {
+            
+            recipient_ref = db_firestore.collection('users').document(user_uid) # Recipient (current user)
+            sender_ref = db_firestore.collection('users').document(sender_uid)    # Sender (who sent request)
+
+            # Logic: Sender is now following Recipient
+            # Recipient (user_uid) gains a follower.
+            batch.update(recipient_ref, {
                 'friends': firestore.ArrayUnion([sender_uid]),
                 'followers_count': firestore.Increment(1)
             })
+            # Sender (sender_uid) is now following one more person.
             batch.update(sender_ref, {
                 'friends': firestore.ArrayUnion([user_uid]),
                 'following_count': firestore.Increment(1)
@@ -593,10 +597,8 @@ def handle_friend_request(request_id, action):
 
         elif action == 'decline':
             request_ref.update({'status': 'declined', 'responded_at': firestore.SERVER_TIMESTAMP})
-            # No notification for decline to keep things simpler/less negative
             flash(f"Friend request from {sender_username} declined.", "info")
         
-        # Mark the original friend_request notification as read
         if action in ['accept', 'decline']:
             notif_query = db_firestore.collection('notifications') \
                 .where('request_id', '==', request_id) \
@@ -611,42 +613,91 @@ def handle_friend_request(request_id, action):
 
     return redirect(request.form.get('next_url') or request.referrer or url_for('notifications_page'))
 
-@app.route('/unfriend/<string:friend_uid>', methods=['POST'])
+# In app.py
+
+@app.route('/unfriend/<string:friend_uid>', methods=['POST']) # Renamed friend_uid to other_user_uid for clarity
 @login_required
 def unfriend(friend_uid):
-    """Remove a user from the current user's friends list."""
-    user_uid = session['user_uid']
+    current_user_uid = session['user_uid']
 
-    user_ref = db_firestore.collection('users').document(user_uid)
-    friend_ref = db_firestore.collection('users').document(friend_uid)
-
-    user_doc = user_ref.get()
-    if not user_doc.exists or friend_uid not in user_doc.to_dict().get('friends', []):
-        flash("User is not in your friends list.", "error")
+    # Check if they are actually friends (this is a basic check from current user's perspective)
+    # More robust check will be to find the accepted friend request.
+    current_user_doc_snap = db_firestore.collection('users').document(current_user_uid).get()
+    if not current_user_doc_snap.exists or \
+       friend_uid not in current_user_doc_snap.to_dict().get('friends', []):
+        flash("You are not friends with this user or an error occurred.", "error")
+        # Attempt to redirect to other user's profile if possible, otherwise home
+        other_username_for_redirect = get_username(friend_uid)
+        if other_username_for_redirect != 'Unknown User':
+            return redirect(url_for('view_profile_page', view_username=other_username_for_redirect))
         return redirect(request.referrer or url_for('home'))
 
-    friend_username = get_username(friend_uid)
+    original_sender_uid = None
+    original_recipient_uid = None
 
+    # Scenario 1: Current user sent the request to other_user, other_user accepted.
+    # So, current_user was original_sender, other_user was original_recipient.
+    req_query1 = db_firestore.collection('friend_requests') \
+        .where('fromUserId', '==', current_user_uid) \
+        .where('toUserId', '==', friend_uid) \
+        .where('status', '==', 'accepted').limit(1).stream()
+    
+    request_doc_found = next(req_query1, None)
+    if request_doc_found:
+        original_sender_uid = current_user_uid
+        original_recipient_uid = friend_uid
+    else:
+        # Scenario 2: other_user sent the request to current_user, current_user accepted.
+        # So, other_user was original_sender, current_user was original_recipient.
+        req_query2 = db_firestore.collection('friend_requests') \
+            .where('fromUserId', '==', friend_uid) \
+            .where('toUserId', '==', current_user_uid) \
+            .where('status', '==', 'accepted').limit(1).stream()
+        request_doc_found = next(req_query2, None)
+        if request_doc_found:
+            original_sender_uid = friend_uid
+            original_recipient_uid = current_user_uid
+
+    other_user_username = get_username(friend_uid) # For flash message and redirect
+
+    if not original_sender_uid or not original_recipient_uid:
+        # This means no accepted friend request was found, which is strange if they are in 'friends' list.
+        # This could happen if friend_requests documents are deleted or data is inconsistent.
+        # As a fallback, remove from friends lists but flash a warning about counts.
+        flash(f"Could not verify the original friend connection with {other_user_username}. Removing friend status, but please check follower/following counts if they seem off.", "warning")
+        try:
+            batch_fallback = db_firestore.batch()
+            current_user_ref_fallback = db_firestore.collection('users').document(current_user_uid)
+            other_user_ref_fallback = db_firestore.collection('users').document(friend_uid)
+            batch_fallback.update(current_user_ref_fallback, {'friends': firestore.ArrayRemove([friend_uid])})
+            batch_fallback.update(other_user_ref_fallback, {'friends': firestore.ArrayRemove([current_user_uid])})
+            batch_fallback.commit()
+        except Exception as e_fallback:
+            flash(f"Error during fallback unfriend: {e_fallback}", "error")
+        return redirect(url_for('view_profile_page', view_username=other_user_username))
+
+    sender_ref = db_firestore.collection('users').document(original_sender_uid)
+    recipient_ref = db_firestore.collection('users').document(original_recipient_uid)
+    
     try:
         batch = db_firestore.batch()
 
-        user_updates = {'friends': firestore.ArrayRemove([friend_uid])}
-        friend_updates = {'friends': firestore.ArrayRemove([user_uid])}
-
-        # Remove follower relationship
-        # The current user was following the friend, so decrement following_count
-        # The friend loses one follower
-        user_updates['following_count'] = firestore.Increment(-1)
-        friend_updates['followers_count'] = firestore.Increment(-1)
-
-        batch.update(user_ref, user_updates)
-        batch.update(friend_ref, friend_updates)
+        # Decrement following_count for the original_sender_uid
+        batch.update(sender_ref, {
+            'friends': firestore.ArrayRemove([original_recipient_uid]),
+            'following_count': firestore.Increment(-1)
+        })
+        # Decrement followers_count for the original_recipient_uid
+        batch.update(recipient_ref, {
+            'friends': firestore.ArrayRemove([original_sender_uid]),
+            'followers_count': firestore.Increment(-1)
+        })
         batch.commit()
-        flash(f"You are no longer friends with {friend_username}.", "info")
+        flash(f"You are no longer friends with {other_user_username}.", "info")
     except Exception as e:
         flash(f"Error removing friend: {e}", "error")
 
-    return redirect(url_for('view_profile_page', view_username=friend_username))
+    return redirect(url_for('view_profile_page', view_username=other_user_username))
 
 # --- Removed friend_requests_page route as it's no longer needed ---
 
