@@ -568,14 +568,13 @@ def handle_friend_request(request_id, action):
             batch = db_firestore.batch()
             user_ref = db_firestore.collection('users').document(user_uid)
             sender_ref = db_firestore.collection('users').document(sender_uid)
+            # The recipient gains a follower and the sender is now following
             batch.update(user_ref, {
                 'friends': firestore.ArrayUnion([sender_uid]),
-                'followers_count': firestore.Increment(1),
-                'following_count': firestore.Increment(1)
+                'followers_count': firestore.Increment(1)
             })
             batch.update(sender_ref, {
                 'friends': firestore.ArrayUnion([user_uid]),
-                'followers_count': firestore.Increment(1),
                 'following_count': firestore.Increment(1)
             })
             batch.commit()
@@ -634,10 +633,8 @@ def unfriend(friend_uid):
         user_updates = {'friends': firestore.ArrayRemove([friend_uid])}
         friend_updates = {'friends': firestore.ArrayRemove([user_uid])}
 
-        # Decrement follower/following counts
+        # Remove follower relationship
         user_updates['followers_count'] = firestore.Increment(-1)
-        user_updates['following_count'] = firestore.Increment(-1)
-        friend_updates['followers_count'] = firestore.Increment(-1)
         friend_updates['following_count'] = firestore.Increment(-1)
 
         batch.update(user_ref, user_updates)
