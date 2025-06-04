@@ -40,15 +40,19 @@ def inject_unread_notification_count():
         user_uid = session['user_uid']
         try:
             notifications_query = db_firestore.collection('notifications') \
-                                              .where('recipient_uid', '==', user_uid) \
-                                              .where('is_read', '==', False) \
-                                              .stream()
-            unread_count = sum(1 for _ in notifications_query)
-            return dict(unread_notification_count=unread_count)
+                .where('recipient_uid', '==', user_uid) \
+                .where('is_read', '==', False) \
+                .stream()
+            notifications = list(notifications_query)
+            unread_count = len(notifications)
+            unread_message_count = sum(1 for n in notifications
+                                       if n.to_dict().get('type') == 'new_message')
+            return dict(unread_notification_count=unread_count,
+                        unread_message_count=unread_message_count)
         except Exception as e:
             print(f"Error fetching unread notification count: {e}")
-            return dict(unread_notification_count=0)
-    return dict(unread_notification_count=0)
+            return dict(unread_notification_count=0, unread_message_count=0)
+    return dict(unread_notification_count=0, unread_message_count=0)
 
 def get_username(user_uid):
     if not user_uid: return 'Unknown User'
@@ -396,10 +400,21 @@ def messages_home():
 @login_required
 def direct_messages(conversation_id):
     messages_ref = db_firestore.collection('conversations').document(conversation_id).collection('messages')
+    current_uid = session.get('user_uid')
+
+    # Mark message notifications for this conversation as read
+    notif_query = db_firestore.collection('notifications') \
+        .where('recipient_uid', '==', current_uid) \
+        .where('type', '==', 'new_message') \
+        .where('conversation_id', '==', conversation_id) \
+        .where('is_read', '==', False) \
+        .stream()
+    for doc in notif_query:
+        doc.reference.update({'is_read': True})
 
     if request.method == 'POST' and 'message' in request.form:
         sender_name = session.get('display_name', 'Anonymous')
-        sender_uid = session.get('user_uid')
+        sender_uid = current_uid
         text = request.form.get('message')
         if text:
             messages_ref.add({
@@ -408,6 +423,22 @@ def direct_messages(conversation_id):
                 'text': text,
                 'timestamp': firestore.SERVER_TIMESTAMP
             })
+            # Notify other participants
+            conv_doc = db_firestore.collection('conversations').document(conversation_id).get()
+            participants = conv_doc.to_dict().get('participants', []) if conv_doc.exists else []
+            for uid in participants:
+                if uid != sender_uid:
+                    db_firestore.collection('notifications').add({
+                        'recipient_uid': uid,
+                        'sender_uid': sender_uid,
+                        'sender_name': sender_name,
+                        'message': f"{sender_name} sent you a message.",
+                        'link': url_for('direct_messages', conversation_id=conversation_id),
+                        'type': 'new_message',
+                        'conversation_id': conversation_id,
+                        'is_read': False,
+                        'timestamp': firestore.SERVER_TIMESTAMP
+                    })
         return redirect(url_for('direct_messages', conversation_id=conversation_id))
 
     messages_query = messages_ref.order_by('timestamp', direction=firestore.Query.ASCENDING).stream()
@@ -630,6 +661,25 @@ def mark_notification_as_read(notification_id):
         flash("Notification not found or access denied.", "error")
     
     return redirect(request.form.get('next_url') or request.referrer or url_for('notifications_page'))
+
+
+@app.route('/mark_all_notifications_read', methods=['POST'])
+@login_required
+def mark_all_notifications_read():
+    user_uid = session['user_uid']
+    try:
+        query = db_firestore.collection('notifications') \
+            .where('recipient_uid', '==', user_uid) \
+            .where('is_read', '==', False) \
+            .stream()
+        batch = db_firestore.batch()
+        for doc in query:
+            batch.update(doc.reference, {'is_read': True})
+        batch.commit()
+        return jsonify({'status': 'success'})
+    except Exception as e:
+        print(f"Error clearing notifications: {e}")
+        return jsonify({'status': 'error'}), 500
 
 
 @app.route("/test-firebase") # Keep for testing

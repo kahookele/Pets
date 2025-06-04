@@ -245,6 +245,17 @@
     .notifications-close:hover {
         color: var(--primary-text-color);
     }
+    .notifications-clear {
+        background: none;
+        border: none;
+        font-size: 0.9rem;
+        cursor: pointer;
+        color: var(--link-color);
+        margin-right: 10px;
+    }
+    .notifications-clear:hover {
+        color: var(--link-hover-color);
+    }
     #notificationsList { list-style-type: none; padding: 0; margin: 0; }
     #notificationsList li { padding: 10px 0; border-bottom: 1px solid var(--border-color); }
     #notificationsList li:last-child { border-bottom: none; }
@@ -301,7 +312,10 @@
     <div id="notificationsPanel" class="notifications-panel">
         <div class="notifications-panel-header">
             <h2>Notifications</h2>
-            <button id="closeNotificationsPanel" class="notifications-close">&times;</button>
+            <div>
+                <button id="clearNotificationsPanel" class="notifications-clear">Clear</button>
+                <button id="closeNotificationsPanel" class="notifications-close">&times;</button>
+            </div>
         </div>
         <ul id="notificationsList"></ul>
     </div>
