@@ -9,6 +9,13 @@
     <div class="main-content">
         <h2>Home Page</h2>
         <p>Welcome to the Pet App! Find and share your favorite pet moments here.</p>
+
+        <h3>Create Post</h3>
+        <form method="post" action="{{ url_for('create_post') }}" enctype="multipart/form-data">
+            <input type="file" name="image" required>
+            <input type="text" name="caption" placeholder="Caption">
+            <button type="submit">Upload</button>
+        </form>
+
     </div>
-</div>
 {% endblock %}

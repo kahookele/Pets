@@ -756,6 +756,7 @@ def posts_page():
         posts.append({
             'id': p_doc.id,
             'username': get_username(p_data.get('user_uid')),
+            'user_uid': p_data.get('user_uid'),
             'image_url': p_data.get('image_url'),
             'caption': p_data.get('caption'),
             'timestamp': p_data.get('timestamp'),
@@ -835,6 +836,33 @@ def like_comment(post_id, comment_id):
             c_ref.update({'likes': firestore.ArrayRemove([user_uid])})
         else:
             c_ref.update({'likes': firestore.ArrayUnion([user_uid])})
+    return redirect(request.referrer or url_for('posts_page'))
+
+
+@app.route('/delete_post/<string:post_id>', methods=['POST'])
+@login_required
+def delete_post(post_id):
+    """Allow a user to delete one of their own posts."""
+    user_uid = session.get('user_uid')
+    p_ref = db_firestore.collection('posts').document(post_id)
+    doc = p_ref.get()
+    if not doc.exists:
+        flash('Post not found.', 'error')
+        return redirect(request.referrer or url_for('posts_page'))
+
+    if doc.to_dict().get('user_uid') != user_uid:
+        flash('You are not authorized to delete this post.', 'error')
+        return redirect(request.referrer or url_for('posts_page'))
+
+    try:
+        # Delete comments subcollection if any
+        for c in p_ref.collection('comments').stream():
+            c.reference.delete()
+        p_ref.delete()
+        flash('Post deleted.', 'success')
+    except Exception as e:
+        flash(f'Error deleting post: {e}', 'error')
+
     return redirect(request.referrer or url_for('posts_page'))
 
 
