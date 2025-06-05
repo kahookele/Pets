@@ -69,7 +69,36 @@ def get_username(user_uid):
 @app.route("/")
 @login_required
 def home():
-    return render_template("home.html", active_page='home')
+    user_uid = session.get('user_uid')
+    posts_stream = db_firestore.collection('posts')\
+        .order_by('timestamp', direction=firestore.Query.DESCENDING).stream()
+    posts = []
+    for p_doc in posts_stream:
+        p_data = p_doc.to_dict()
+        comments_stream = db_firestore.collection('posts').document(p_doc.id)\
+            .collection('comments').order_by('timestamp').stream()
+        comments = []
+        for c_doc in comments_stream:
+            c_data = c_doc.to_dict()
+            comments.append({
+                'id': c_doc.id,
+                'username': get_username(c_data.get('user_uid')),
+                'text': c_data.get('text'),
+                'likes_count': len(c_data.get('likes', [])),
+                'user_liked': user_uid in c_data.get('likes', [])
+            })
+        posts.append({
+            'id': p_doc.id,
+            'username': get_username(p_data.get('user_uid')),
+            'user_uid': p_data.get('user_uid'),
+            'image_url': p_data.get('image_url'),
+            'caption': p_data.get('caption'),
+            'timestamp': p_data.get('timestamp'),
+            'likes_count': len(p_data.get('likes', [])),
+            'user_liked': user_uid in p_data.get('likes', []),
+            'comments': comments
+        })
+    return render_template("home.html", posts=posts, active_page='home')
 
 @app.route('/profile')
 @login_required
@@ -132,12 +161,44 @@ def view_profile_page(view_username):
 
     can_view_profile = visibility == 'public' or is_own_profile or is_following
 
+    posts = []
+    if can_view_profile:
+        posts_stream = db_firestore.collection('posts')\
+            .where('user_uid', '==', target_user_uid)\
+            .order_by('timestamp', direction=firestore.Query.DESCENDING).stream()
+        for p_doc in posts_stream:
+            p_data = p_doc.to_dict()
+            comments_stream = db_firestore.collection('posts').document(p_doc.id)\
+                .collection('comments').order_by('timestamp').stream()
+            comments = []
+            for c_doc in comments_stream:
+                c_data = c_doc.to_dict()
+                comments.append({
+                    'id': c_doc.id,
+                    'username': get_username(c_data.get('user_uid')),
+                    'text': c_data.get('text'),
+                    'likes_count': len(c_data.get('likes', [])),
+                    'user_liked': logged_in_user_uid in c_data.get('likes', [])
+                })
+            posts.append({
+                'id': p_doc.id,
+                'username': get_username(p_data.get('user_uid')),
+                'user_uid': p_data.get('user_uid'),
+                'image_url': p_data.get('image_url'),
+                'caption': p_data.get('caption'),
+                'timestamp': p_data.get('timestamp'),
+                'likes_count': len(p_data.get('likes', [])),
+                'user_liked': logged_in_user_uid in p_data.get('likes', []),
+                'comments': comments
+            })
+
     return render_template("profile.html",
                            user=target_user_data,
                            is_own_profile=is_own_profile,
                            can_view_profile=can_view_profile,
                            follow_status=follow_status,
                            target_user_uid=target_user_uid,
+                           posts=posts,
                            active_page='profile')
 
 @app.route('/edit_profile', methods=['GET', 'POST'])
@@ -732,39 +793,11 @@ def mark_all_notifications_read():
 
 
 # --- Posts Feature Routes ---
+# The separate posts page has been removed. Redirect any requests to the home page
 @app.route('/posts')
 @login_required
 def posts_page():
-    user_uid = session.get('user_uid')
-    posts_stream = db_firestore.collection('posts')\
-        .order_by('timestamp', direction=firestore.Query.DESCENDING).stream()
-    posts = []
-    for p_doc in posts_stream:
-        p_data = p_doc.to_dict()
-        comments_stream = db_firestore.collection('posts').document(p_doc.id)\
-            .collection('comments').order_by('timestamp').stream()
-        comments = []
-        for c_doc in comments_stream:
-            c_data = c_doc.to_dict()
-            comments.append({
-                'id': c_doc.id,
-                'username': get_username(c_data.get('user_uid')),
-                'text': c_data.get('text'),
-                'likes_count': len(c_data.get('likes', [])),
-                'user_liked': user_uid in c_data.get('likes', [])
-            })
-        posts.append({
-            'id': p_doc.id,
-            'username': get_username(p_data.get('user_uid')),
-            'user_uid': p_data.get('user_uid'),
-            'image_url': p_data.get('image_url'),
-            'caption': p_data.get('caption'),
-            'timestamp': p_data.get('timestamp'),
-            'likes_count': len(p_data.get('likes', [])),
-            'user_liked': user_uid in p_data.get('likes', []),
-            'comments': comments
-        })
-    return render_template('posts.html', posts=posts, active_page='posts')
+    return redirect(url_for('home'))
 
 
 @app.route('/create_post', methods=['POST'])
@@ -775,7 +808,7 @@ def create_post():
     caption = request.form.get('caption', '')
     if not file or not file.filename:
         flash('Image is required.', 'error')
-        return redirect(url_for('posts_page'))
+        return redirect(url_for('home'))
     try:
         blob = bucket.blob(f'post_images/{user_uid}/{uuid.uuid4()}_{file.filename}')
         blob.upload_from_file(file, content_type=file.content_type)
@@ -791,7 +824,7 @@ def create_post():
         flash('Post created.', 'success')
     except Exception as e:
         flash(f'Error creating post: {e}', 'error')
-    return redirect(url_for('posts_page'))
+    return redirect(url_for('home'))
 
 
 @app.route('/like_post/<string:post_id>', methods=['POST'])
@@ -806,7 +839,7 @@ def like_post(post_id):
             p_ref.update({'likes': firestore.ArrayRemove([user_uid])})
         else:
             p_ref.update({'likes': firestore.ArrayUnion([user_uid])})
-    return redirect(request.referrer or url_for('posts_page'))
+    return redirect(request.referrer or url_for('home'))
 
 
 @app.route('/add_comment/<string:post_id>', methods=['POST'])
@@ -821,7 +854,7 @@ def add_comment(post_id):
             'likes': [],
             'timestamp': firestore.SERVER_TIMESTAMP
         })
-    return redirect(request.referrer or url_for('posts_page'))
+    return redirect(request.referrer or url_for('home'))
 
 
 @app.route('/like_comment/<string:post_id>/<string:comment_id>', methods=['POST'])
@@ -836,7 +869,7 @@ def like_comment(post_id, comment_id):
             c_ref.update({'likes': firestore.ArrayRemove([user_uid])})
         else:
             c_ref.update({'likes': firestore.ArrayUnion([user_uid])})
-    return redirect(request.referrer or url_for('posts_page'))
+    return redirect(request.referrer or url_for('home'))
 
 
 @app.route('/delete_post/<string:post_id>', methods=['POST'])
@@ -848,11 +881,11 @@ def delete_post(post_id):
     doc = p_ref.get()
     if not doc.exists:
         flash('Post not found.', 'error')
-        return redirect(request.referrer or url_for('posts_page'))
+        return redirect(request.referrer or url_for('home'))
 
     if doc.to_dict().get('user_uid') != user_uid:
         flash('You are not authorized to delete this post.', 'error')
-        return redirect(request.referrer or url_for('posts_page'))
+        return redirect(request.referrer or url_for('home'))
 
     try:
         # Delete comments subcollection if any
@@ -863,7 +896,7 @@ def delete_post(post_id):
     except Exception as e:
         flash(f'Error deleting post: {e}', 'error')
 
-    return redirect(request.referrer or url_for('posts_page'))
+    return redirect(request.referrer or url_for('home'))
 
 
 @app.route("/test-firebase") # Keep for testing
