@@ -246,7 +246,7 @@
                 </div>
 
                 <ul class="ig-info-row2-stats">
-                    <li class="ig-stat-item"><span class="count">0</span> posts</li>
+                    <li class="ig-stat-item"><span class="count">{{ posts|length }}</span> posts</li>
                     <li class="ig-stat-item"><span class="count">{{ user.followers_count|default(0) }}</span> followers</li>
                     <li class="ig-stat-item"><span class="count">{{ user.following_count|default(0) }}</span> following</li>
                 </ul>
@@ -259,11 +259,43 @@
         </header>
 
         <hr style="border: 0; border-top: 1px solid #dbdbdb; margin: 20px 0;">
-        
+
+        {% if posts %}
+            {% for post in posts %}
+            <div class="post" style="border:1px solid #ccc; padding:10px; margin-bottom:20px;">
+                <p><strong>{{ post.username }}</strong> - {{ post.timestamp }}</p>
+                <img src="{{ post.image_url }}" alt="post image" style="max-width:300px;">
+                <p>{{ post.caption }}</p>
+                <form method="post" action="{{ url_for('like_post', post_id=post.id) }}">
+                    <button type="submit">{{ 'Unlike' if post.user_liked else 'Like' }} ({{ post.likes_count }})</button>
+                </form>
+                {% if post.user_uid == session['user_uid'] %}
+                <form method="post" action="{{ url_for('delete_post', post_id=post.id) }}" style="display:inline;">
+                    <button type="submit">Delete</button>
+                </form>
+                {% endif %}
+                <div class="comments" style="margin-top:10px;">
+                    {% for comment in post.comments %}
+                    <div class="comment" style="margin-bottom:5px;">
+                        <strong>{{ comment.username }}</strong>: {{ comment.text }}
+                        <form method="post" action="{{ url_for('like_comment', post_id=post.id, comment_id=comment.id) }}" style="display:inline;">
+                            <button type="submit">{{ 'Unlike' if comment.user_liked else 'Like' }} ({{ comment.likes_count }})</button>
+                        </form>
+                    </div>
+                    {% endfor %}
+                    <form method="post" action="{{ url_for('add_comment', post_id=post.id) }}">
+                        <input type="text" name="text" placeholder="Add a comment" required>
+                        <button type="submit">Comment</button>
+                    </form>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
         <div style="text-align:center; padding: 40px 0; color: var(--secondary-text-color, #606770);">
             <i class="bi bi-camera" style="font-size: 2rem; margin-bottom:10px;"></i>
             <p>No posts yet.</p>
         </div>
+        {% endif %}
     </div>
 {% else %}
     {# This is the LIMITED PUBLIC VIEW for PRIVATE profiles (can_view_profile is False) #}
@@ -309,7 +341,7 @@
                     </div>
                      {# Stats are visible even for this limited view #}
                      <ul class="ig-info-row2-stats" style="margin-top: 20px;">
-                        <li class="ig-stat-item"><span class="count">0</span> posts</li>
+                        <li class="ig-stat-item"><span class="count">{{ posts|length }}</span> posts</li>
                         <li class="ig-stat-item"><span class="count">{{ user.followers_count|default(0) }}</span> followers</li>
                         <li class="ig-stat-item"><span class="count">{{ user.following_count|default(0) }}</span> following</li>
                     </ul>
