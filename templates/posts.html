@@ -20,6 +20,11 @@
         <form method="post" action="{{ url_for('like_post', post_id=post.id) }}">
             <button type="submit">{{ 'Unlike' if post.user_liked else 'Like' }} ({{ post.likes_count }})</button>
         </form>
+        {% if post.user_uid == session['user_uid'] %}
+        <form method="post" action="{{ url_for('delete_post', post_id=post.id) }}" style="display:inline;">
+            <button type="submit">Delete</button>
+        </form>
+        {% endif %}
         <div class="comments" style="margin-top:10px;">
             {% for comment in post.comments %}
             <div class="comment" style="margin-bottom:5px;">
