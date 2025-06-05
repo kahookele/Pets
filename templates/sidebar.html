@@ -144,6 +144,18 @@
         padding-bottom: 10px;
         transition: opacity 0.3s ease-in-out, max-height 0.3s ease-in-out, padding 0.3s ease-in-out, margin 0.3s ease-in-out;
     }
+
+    .sidebar-section-title {
+        padding: 10px 15px 5px 15px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--secondary-text-color);
+        text-transform: uppercase;
+        pointer-events: none;
+    }
+    .sidebar.narrow .sidebar-section-title {
+        display: none;
+    }
     
     /* Styles for notification badge */
     .sidebar .badge.bg-danger {
@@ -214,27 +226,22 @@
             </a>
         </li>
 
-        <li class="search-toggle-item"> <a id="searchIconToggle"> <span class="sidebar-icon"><i class="bi bi-search"></i></span>
-                <span class="sidebar-label" id="searchIconToggleLabel">Search</span> </a>
-            </li>
-
         <li>
             <a href="{{ url_for('profile') }}" class="{{ 'active' if active_page == 'profile' else '' }}">
                 <span class="sidebar-icon"><i class="fas fa-paw"></i></span>
                 <span class="sidebar-label">Profile</span>
             </a>
         </li>
-        <li>
-            <a href="{{ url_for('notifications_page') }}" id="notificationsToggle" class="{{ 'active' if active_page == 'notifications' else '' }}">
-                <span class="sidebar-icon"><i class="bi bi-hearts"></i></span>
-                <span class="sidebar-label">
-                    Notifications
-                    {% if unread_notification_count > 0 %}
-                        <span class="badge bg-danger ms-1">{{ unread_notification_count }}</span>
-                    {% endif %}
-                </span>
+
+        <li class="sidebar-section-title">Socials</li>
+
+        <li class="search-toggle-item">
+            <a id="searchIconToggle">
+                <span class="sidebar-icon"><i class="bi bi-search"></i></span>
+                <span class="sidebar-label" id="searchIconToggleLabel">Search</span>
             </a>
         </li>
+
         <li>
             <a href="{{ url_for('messages_home') }}" class="{{ 'active' if active_page == 'messages' else '' }}">
                 <span class="sidebar-icon"><i class="bi bi-envelope-fill"></i></span>
@@ -242,6 +249,18 @@
                     Messages
                     {% if unread_message_count > 0 %}
                         <span class="badge bg-danger ms-1">{{ unread_message_count }}</span>
+                    {% endif %}
+                </span>
+            </a>
+        </li>
+
+        <li>
+            <a href="{{ url_for('notifications_page') }}" id="notificationsToggle" class="{{ 'active' if active_page == 'notifications' else '' }}">
+                <span class="sidebar-icon"><i class="bi bi-hearts"></i></span>
+                <span class="sidebar-label">
+                    Notifications
+                    {% if unread_notification_count > 0 %}
+                        <span class="badge bg-danger ms-1">{{ unread_notification_count }}</span>
                     {% endif %}
                 </span>
             </a>
