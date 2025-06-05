@@ -88,8 +88,8 @@
         display: flex;
         align-items: center;
         justify-content: flex-start;
-        border-radius: 25px; 
-        overflow: hidden; 
+        border-radius: 25px;
+        overflow: hidden;
         text-overflow: ellipsis;
         box-sizing: border-box;
         transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out, padding 0.35s ease-in-out, gap 0.35s ease-in-out, justify-content 0.35s ease-in-out;
@@ -132,7 +132,12 @@
 
     .sidebar .sidebar-label {
         opacity: 1;
-        transition: opacity 0.3s ease-in-out 0.05s, max-width 0.3s ease-in-out, font-size 0.3s ease-in-out; 
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-grow: 1;
+        gap: 8px;
+        transition: opacity 0.3s ease-in-out 0.05s, max-width 0.3s ease-in-out, font-size 0.3s ease-in-out;
     }
     
     .sidebar-dog-item {
