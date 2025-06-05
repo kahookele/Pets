@@ -731,6 +731,113 @@ def mark_all_notifications_read():
         return jsonify({'status': 'error'}), 500
 
 
+# --- Posts Feature Routes ---
+@app.route('/posts')
+@login_required
+def posts_page():
+    user_uid = session.get('user_uid')
+    posts_stream = db_firestore.collection('posts')\
+        .order_by('timestamp', direction=firestore.Query.DESCENDING).stream()
+    posts = []
+    for p_doc in posts_stream:
+        p_data = p_doc.to_dict()
+        comments_stream = db_firestore.collection('posts').document(p_doc.id)\
+            .collection('comments').order_by('timestamp').stream()
+        comments = []
+        for c_doc in comments_stream:
+            c_data = c_doc.to_dict()
+            comments.append({
+                'id': c_doc.id,
+                'username': get_username(c_data.get('user_uid')),
+                'text': c_data.get('text'),
+                'likes_count': len(c_data.get('likes', [])),
+                'user_liked': user_uid in c_data.get('likes', [])
+            })
+        posts.append({
+            'id': p_doc.id,
+            'username': get_username(p_data.get('user_uid')),
+            'image_url': p_data.get('image_url'),
+            'caption': p_data.get('caption'),
+            'timestamp': p_data.get('timestamp'),
+            'likes_count': len(p_data.get('likes', [])),
+            'user_liked': user_uid in p_data.get('likes', []),
+            'comments': comments
+        })
+    return render_template('posts.html', posts=posts, active_page='posts')
+
+
+@app.route('/create_post', methods=['POST'])
+@login_required
+def create_post():
+    user_uid = session.get('user_uid')
+    file = request.files.get('image')
+    caption = request.form.get('caption', '')
+    if not file or not file.filename:
+        flash('Image is required.', 'error')
+        return redirect(url_for('posts_page'))
+    try:
+        blob = bucket.blob(f'post_images/{user_uid}/{uuid.uuid4()}_{file.filename}')
+        blob.upload_from_file(file, content_type=file.content_type)
+        blob.make_public()
+        image_url = blob.public_url
+        db_firestore.collection('posts').add({
+            'user_uid': user_uid,
+            'image_url': image_url,
+            'caption': caption,
+            'likes': [],
+            'timestamp': firestore.SERVER_TIMESTAMP
+        })
+        flash('Post created.', 'success')
+    except Exception as e:
+        flash(f'Error creating post: {e}', 'error')
+    return redirect(url_for('posts_page'))
+
+
+@app.route('/like_post/<string:post_id>', methods=['POST'])
+@login_required
+def like_post(post_id):
+    user_uid = session.get('user_uid')
+    p_ref = db_firestore.collection('posts').document(post_id)
+    doc = p_ref.get()
+    if doc.exists:
+        likes = doc.to_dict().get('likes', [])
+        if user_uid in likes:
+            p_ref.update({'likes': firestore.ArrayRemove([user_uid])})
+        else:
+            p_ref.update({'likes': firestore.ArrayUnion([user_uid])})
+    return redirect(request.referrer or url_for('posts_page'))
+
+
+@app.route('/add_comment/<string:post_id>', methods=['POST'])
+@login_required
+def add_comment(post_id):
+    user_uid = session.get('user_uid')
+    text = request.form.get('text', '').strip()
+    if text:
+        db_firestore.collection('posts').document(post_id).collection('comments').add({
+            'user_uid': user_uid,
+            'text': text,
+            'likes': [],
+            'timestamp': firestore.SERVER_TIMESTAMP
+        })
+    return redirect(request.referrer or url_for('posts_page'))
+
+
+@app.route('/like_comment/<string:post_id>/<string:comment_id>', methods=['POST'])
+@login_required
+def like_comment(post_id, comment_id):
+    user_uid = session.get('user_uid')
+    c_ref = db_firestore.collection('posts').document(post_id).collection('comments').document(comment_id)
+    doc = c_ref.get()
+    if doc.exists:
+        likes = doc.to_dict().get('likes', [])
+        if user_uid in likes:
+            c_ref.update({'likes': firestore.ArrayRemove([user_uid])})
+        else:
+            c_ref.update({'likes': firestore.ArrayUnion([user_uid])})
+    return redirect(request.referrer or url_for('posts_page'))
+
+
 @app.route("/test-firebase") # Keep for testing
 def test_firebase():
     try:
