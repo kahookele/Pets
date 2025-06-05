@@ -176,14 +176,22 @@
     overflow-y: auto; /* Add scroll if results exceed max height */
     }
 
+    .search-result-item {
+        margin-bottom: 4px;
+    }
+    .search-result-item:last-child {
+        margin-bottom: 0;
+    }
     .search-result-link {
-        display: flex; /* Key for aligning image and text horizontally */
+        display: flex; /* Align image and text horizontally */
         align-items: center; /* Vertically aligns items in the center */
+        width: 100%;
         padding: 8px 15px; /* Padding inside each result item */
         text-decoration: none;
         color: var(--primary-text-color, #333); /* Use your CSS variable or a default */
-        transition: background-color 0.2s ease-in-out;
+        transition: background-color 0.2s ease-in-out, opacity 0.2s ease-in-out;
         border-bottom: 1px solid var(--border-color, #eee); /* Light border between items */
+        opacity: 0.9; /* slight transparency */
     }
 
     .search-result-item:last-child .search-result-link {
@@ -193,6 +201,7 @@
     .search-result-link:hover {
         background-color: var(--general-hover-bg-color, #f0f0f0); /* Use variable or default */
         color: var(--hover-text-color, #000);
+        opacity: 1;
     }
 
     .search-result-image {
@@ -202,6 +211,7 @@
         margin-right: 12px; /* Space between image and username */
         object-fit: cover; /* Ensures the image covers the area without distortion */
         background-color: #f0f0f0; /* Fallback bg if image is transparent or slow loading */
+        pointer-events: auto;
     }
 
     .search-result-username {
