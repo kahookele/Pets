@@ -2,17 +2,58 @@
 
 {% block title %}Messages | Pet App{% endblock %}
 
+{% block head_extra %}
+<style>
+  .messages-container {
+    max-width: 600px;
+    margin: 0 auto;
+  }
+  .messages-search {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+  .messages-search input[type="text"] {
+    flex-grow: 1;
+    padding: 8px 12px;
+    border: 1px solid var(--input-border-color);
+    border-radius: 20px;
+  }
+  .messages-search button {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 20px;
+    background-color: var(--link-color);
+    color: #fff;
+    cursor: pointer;
+  }
+  .messages-search button:hover {
+    background-color: var(--link-hover-color);
+  }
+  .messages-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  .messages-list li {
+    margin-bottom: 12px;
+  }
+</style>
+{% endblock %}
+
 {% block content %}
-<h2>Start a Conversation</h2>
-<form method="get" action="{{ url_for('messages_home') }}">
-    <input type="text" name="q" placeholder="Search friends" value="{{ query|default('') }}">
-    <button type="submit">Search</button>
-</form>
-<ul>
-{% for friend in friends %}
-    <li><a href="{{ url_for('start_conversation', target_uid=friend.uid) }}">{{ friend.username }}</a></li>
-{% else %}
-    <li>No friends found.</li>
-{% endfor %}
-</ul>
+<div class="messages-container">
+  <h2>Start a Conversation</h2>
+  <form method="get" action="{{ url_for('messages_home') }}" class="messages-search">
+      <input type="text" name="q" placeholder="Search friends" value="{{ query|default('') }}">
+      <button type="submit">Search</button>
+  </form>
+  <ul class="messages-list">
+  {% for friend in friends %}
+      <li><a href="{{ url_for('start_conversation', target_uid=friend.uid) }}">{{ friend.username }}</a></li>
+  {% else %}
+      <li>No friends found.</li>
+  {% endfor %}
+  </ul>
+</div>
 {% endblock %}
