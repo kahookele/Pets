@@ -447,22 +447,53 @@ def start_conversation(target_uid):
 @app.route('/messages', methods=['GET'])
 @login_required
 def messages_home():
-    """Simple page to search friends and start conversations."""
+    """Search followed users and show recent conversations."""
     user_uid = session.get('user_uid')
     user_doc = db_firestore.collection('users').document(user_uid).get()
-    friend_ids = user_doc.to_dict().get('friends', []) if user_doc.exists else []
-    friends = []
-    for f_uid in friend_ids:
+    following_ids = user_doc.to_dict().get('following', []) if user_doc.exists else []
+
+    following = []
+    for f_uid in following_ids:
         doc = db_firestore.collection('users').document(f_uid).get()
         if doc.exists:
             data = doc.to_dict()
-            friends.append({'uid': f_uid, 'username': data.get('username')})
+            following.append({
+                'uid': f_uid,
+                'username': data.get('username'),
+                'profile_image': data.get('profile_image', url_for('static', filename='images/default_avatar.png'))
+            })
 
     query = request.args.get('q', '').strip().lower()
     if query:
-        friends = [f for f in friends if query in f['username'].lower()]
+        following = [f for f in following if query in f['username'].lower()]
 
-    return render_template('messages_home.html', friends=friends, query=query, active_page='messages')
+    recent_conversations = []
+    convs = db_firestore.collection('conversations').where('participants', 'array_contains', user_uid).stream()
+    for conv in convs:
+        conv_id = conv.id
+        participants = conv.to_dict().get('participants', [])
+        other_uid = next((uid for uid in participants if uid != user_uid), None)
+        if not other_uid:
+            continue
+        other_doc = db_firestore.collection('users').document(other_uid).get()
+        if not other_doc.exists:
+            continue
+        other_data = other_doc.to_dict()
+        last_message_query = db_firestore.collection('conversations').document(conv_id).collection('messages')\
+            .order_by('timestamp', direction=firestore.Query.DESCENDING).limit(1).stream()
+        last_message = next(last_message_query, None)
+        last_ts = last_message.to_dict().get('timestamp') if last_message else None
+        recent_conversations.append({
+            'conversation_id': conv_id,
+            'username': other_data.get('username'),
+            'profile_image': other_data.get('profile_image', url_for('static', filename='images/default_avatar.png')),
+            'last_timestamp': last_ts
+        })
+
+    recent_conversations.sort(key=lambda x: x['last_timestamp'] or datetime.min, reverse=True)
+
+    return render_template('messages_home.html', friends=following, query=query,
+                           recent_conversations=recent_conversations, active_page='messages')
 
 
 @app.route('/direct_messages/<conversation_id>', methods=['GET', 'POST'])

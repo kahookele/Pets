@@ -38,6 +38,17 @@
   .messages-list li {
     margin-bottom: 12px;
   }
+  .user-link {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .user-link img {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+  }
 </style>
 {% endblock %}
 
@@ -45,15 +56,34 @@
 <div class="messages-container">
   <h2>Start a Conversation</h2>
   <form method="get" action="{{ url_for('messages_home') }}" class="messages-search">
-      <input type="text" name="q" placeholder="Search friends" value="{{ query|default('') }}">
+      <input type="text" name="q" placeholder="Search following" value="{{ query|default('') }}">
       <button type="submit">Search</button>
   </form>
   <ul class="messages-list">
   {% for friend in friends %}
-      <li><a href="{{ url_for('start_conversation', target_uid=friend.uid) }}">{{ friend.username }}</a></li>
+      <li>
+        <a href="{{ url_for('start_conversation', target_uid=friend.uid) }}" class="user-link">
+          <img src="{{ friend.profile_image }}" alt="{{ friend.username }}">
+          <span>{{ friend.username }}</span>
+        </a>
+      </li>
   {% else %}
-      <li>No friends found.</li>
+      <li>No followed users found.</li>
   {% endfor %}
   </ul>
+
+  {% if recent_conversations %}
+  <h3>Recent Chats</h3>
+  <ul class="messages-list">
+  {% for chat in recent_conversations %}
+      <li>
+        <a href="{{ url_for('direct_messages', conversation_id=chat.conversation_id) }}" class="user-link">
+          <img src="{{ chat.profile_image }}" alt="{{ chat.username }}">
+          <span>{{ chat.username }}</span>
+        </a>
+      </li>
+  {% endfor %}
+  </ul>
+  {% endif %}
 </div>
 {% endblock %}
