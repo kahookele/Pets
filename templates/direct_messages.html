@@ -2,30 +2,109 @@
 
 {% block title %}Messages | Pet App{% endblock %}
 
+{% block head_extra %}
+<style>
+  #chat-box {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    max-height: 60vh;
+    overflow-y: auto;
+    background-color: var(--main-bg-color);
+  }
+  .message {
+    display: flex;
+    flex-direction: column;
+    max-width: 70%;
+  }
+  .message.sent {
+    align-self: flex-end;
+    background-color: #DCF8C6;
+    border-radius: 12px 12px 0 12px;
+    padding: 8px 12px;
+  }
+  .message.received {
+    align-self: flex-start;
+    background-color: #F1F0F0;
+    border-radius: 12px 12px 12px 0;
+    padding: 8px 12px;
+  }
+  .message-meta {
+    font-size: 0.75rem;
+    color: var(--secondary-text-color);
+    margin-bottom: 2px;
+  }
+  .message-form {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+  }
+  .message-form input[type="text"] {
+    flex-grow: 1;
+    padding: 8px 12px;
+    border: 1px solid var(--input-border-color);
+    border-radius: 20px;
+  }
+  .message-form button {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 20px;
+    background-color: var(--link-color);
+    color: #fff;
+    cursor: pointer;
+  }
+  .message-form button:hover {
+    background-color: var(--link-hover-color);
+  }
+  .message-actions {
+    margin-top: 4px;
+  }
+  .message-actions form {
+    display: inline;
+  }
+  .message-actions button {
+    background: none;
+    border: none;
+    color: var(--link-color);
+    cursor: pointer;
+    margin-right: 4px;
+  }
+  .message-actions button:hover {
+    color: var(--link-hover-color);
+  }
+</style>
+{% endblock %}
+
 {% block content %}
 
-
-<h2>Conversation: {{ conversation_id }}</h2>
+<h2>Conversation</h2>
 <div id="chat-box">
     {% for message in messages %}
-        <p>
-            <strong>{{ message.sender_name }}</strong>:
-            {{ message.text }}
+    <div class="message {% if session['user_uid'] == message.sender_uid %}sent{% else %}received{% endif %}">
+        <div class="message-meta">
+            <strong>{{ message.sender_name }}</strong>
+            <span class="message-time">{{ message.timestamp }}</span>
             {% if message.edited %}<em>(edited)</em>{% endif %}
-            <small>{{ message.timestamp }}</small>
-            {% if session['user_uid'] == message.sender_uid %}
-                <form method="post" action="{{ url_for('delete_message', conversation_id=conversation_id, message_id=message.id) }}" style="display:inline">
-                    <button type="submit">Delete</button>
-                </form>
-                <form method="post" action="{{ url_for('edit_message', conversation_id=conversation_id, message_id=message.id) }}" style="display:inline">
-                    <input type="text" name="new_text" placeholder="Edit message" required>
-                    <button type="submit">Update</button>
-                </form>
-            {% endif %}
-        </p>
+        </div>
+        <div class="message-text">{{ message.text }}</div>
+        {% if session['user_uid'] == message.sender_uid %}
+        <div class="message-actions">
+            <form method="post" action="{{ url_for('delete_message', conversation_id=conversation_id, message_id=message.id) }}">
+                <button type="submit">Delete</button>
+            </form>
+            <form method="post" action="{{ url_for('edit_message', conversation_id=conversation_id, message_id=message.id) }}">
+                <input type="text" name="new_text" placeholder="Edit message" required>
+                <button type="submit">Update</button>
+            </form>
+        </div>
+        {% endif %}
+    </div>
     {% endfor %}
 </div>
-<form method="post">
+<form method="post" class="message-form">
     <input type="text" name="message" placeholder="Type your message..." required>
     <button type="submit">Send</button>
 </form>
