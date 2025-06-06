@@ -4,14 +4,21 @@
 
 {% block head_extra %}
 <style>
+  .chat-container {
+    max-width: 600px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    height: 80vh;
+  }
   #chat-box {
+    flex-grow: 1;
     display: flex;
     flex-direction: column;
     gap: 12px;
     padding: 10px;
     border: 1px solid var(--border-color);
     border-radius: 8px;
-    max-height: 60vh;
     overflow-y: auto;
     background-color: var(--main-bg-color);
   }
@@ -22,14 +29,14 @@
   }
   .message.sent {
     align-self: flex-end;
-    background-color: #DCF8C6;
-    border-radius: 12px 12px 0 12px;
+    background-color: var(--active-selection-bg-color);
+    border-radius: 16px 16px 0 16px;
     padding: 8px 12px;
   }
   .message.received {
     align-self: flex-start;
-    background-color: #F1F0F0;
-    border-radius: 12px 12px 12px 0;
+    background-color: var(--general-hover-bg-color);
+    border-radius: 16px 16px 16px 0;
     padding: 8px 12px;
   }
   .message-meta {
@@ -39,8 +46,8 @@
   }
   .message-form {
     display: flex;
-    gap: 10px;
-    margin-top: 15px;
+    gap: 8px;
+    margin-top: 12px;
   }
   .message-form input[type="text"] {
     flex-grow: 1;
@@ -79,34 +86,34 @@
 {% endblock %}
 
 {% block content %}
-
-<h2>Conversation</h2>
-<div id="chat-box">
-    {% for message in messages %}
-    <div class="message {% if session['user_uid'] == message.sender_uid %}sent{% else %}received{% endif %}">
-        <div class="message-meta">
-            <strong>{{ message.sender_name }}</strong>
-            <span class="message-time">{{ message.timestamp }}</span>
-            {% if message.edited %}<em>(edited)</em>{% endif %}
-        </div>
-        <div class="message-text">{{ message.text }}</div>
-        {% if session['user_uid'] == message.sender_uid %}
-        <div class="message-actions">
-            <form method="post" action="{{ url_for('delete_message', conversation_id=conversation_id, message_id=message.id) }}">
-                <button type="submit">Delete</button>
-            </form>
-            <form method="post" action="{{ url_for('edit_message', conversation_id=conversation_id, message_id=message.id) }}">
-                <input type="text" name="new_text" placeholder="Edit message" required>
-                <button type="submit">Update</button>
-            </form>
-        </div>
-        {% endif %}
-    </div>
-    {% endfor %}
+<div class="chat-container">
+  <h2>Conversation</h2>
+  <div id="chat-box">
+      {% for message in messages %}
+      <div class="message {% if session['user_uid'] == message.sender_uid %}sent{% else %}received{% endif %}">
+          <div class="message-meta">
+              <strong>{{ message.sender_name }}</strong>
+              <span class="message-time">{{ message.timestamp }}</span>
+              {% if message.edited %}<em>(edited)</em>{% endif %}
+          </div>
+          <div class="message-text">{{ message.text }}</div>
+          {% if session['user_uid'] == message.sender_uid %}
+          <div class="message-actions">
+              <form method="post" action="{{ url_for('delete_message', conversation_id=conversation_id, message_id=message.id) }}">
+                  <button type="submit">Delete</button>
+              </form>
+              <form method="post" action="{{ url_for('edit_message', conversation_id=conversation_id, message_id=message.id) }}">
+                  <input type="text" name="new_text" placeholder="Edit message" required>
+                  <button type="submit">Update</button>
+              </form>
+          </div>
+          {% endif %}
+      </div>
+      {% endfor %}
+  </div>
+  <form method="post" class="message-form">
+      <input type="text" name="message" placeholder="Type your message..." required>
+      <button type="submit">Send</button>
+  </form>
 </div>
-<form method="post" class="message-form">
-    <input type="text" name="message" placeholder="Type your message..." required>
-    <button type="submit">Send</button>
-</form>
-
 {% endblock %}
