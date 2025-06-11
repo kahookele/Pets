@@ -396,6 +396,26 @@
             gap: 8px;
         }
 
+        .add-comment-form {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+        }
+        .add-comment-form input[type="text"] {
+            flex: 1;
+            padding: 6px 10px;
+            border: 1px solid var(--glass-border-color);
+            border-radius: 8px;
+        }
+        .add-comment-form button {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 8px;
+            background: var(--link-color);
+            color: #fff;
+            cursor: pointer;
+        }
+
         .delete-comment-btn,
         .delete-post-btn {
             background: none;
@@ -726,9 +746,12 @@
                 const imgSrc = card.querySelector('.home-post-image').src;
                 const commentsTemplate = card.querySelector('.comments-template');
                 const comments = commentsTemplate ? commentsTemplate.innerHTML : '<div>No comments yet.</div>';
+                const postId = card.dataset.postId;
                 viewModal.querySelector('.modal-image img').src = imgSrc;
                 const list = viewModal.querySelector('.modal-comments .comments-list');
                 if (list) list.innerHTML = comments;
+                const form = viewModal.querySelector('.modal-comment-form');
+                if (form) form.action = `/add_comment/${postId}`;
                 viewModal.style.display = 'flex';
             }
 
