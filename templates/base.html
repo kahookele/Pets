@@ -38,6 +38,10 @@
           --sidebar-actual-width-narrow: 70px;
           --search-panel-width: 397px;
           --notifications-panel-width: 350px;
+
+          /* Glassmorphism Colors */
+          --glass-bg-color: rgba(255, 255, 255, 0.45);
+          --glass-border-color: rgba(255, 255, 255, 0.3);
       }
 
       html, body {
@@ -275,23 +279,34 @@
     }
     a:hover {
         color: var(--link-hover-color);
-        text-decoration: none; 
+        text-decoration: none;
+    }
+
+    /* Liquid glass style */
+    .glass-effect {
+        background: var(--glass-bg-color);
+        backdrop-filter: blur(15px);
+        -webkit-backdrop-filter: blur(15px);
+        border: 1px solid var(--glass-border-color);
+        border-radius: 16px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        transition: background-color 0.3s ease;
     }
 
     </style>
     {% block head_extra %}{% endblock %}
 </head><body>
   <div class="app-container">
-    <div class="sidebar-column">
+    <div class="sidebar-column glass-effect">
       {% include "sidebar.html" %}
     </div>
-    <div class="main-content">
+    <div class="main-content glass-effect">
       {% block content %}
       {% endblock %}
     </div>
   </div>
 
-    <div id="searchPanel" class="search-panel">
+    <div id="searchPanel" class="search-panel glass-effect">
         <div class="search-panel-header">
             <h2>Search</h2>
         </div>
@@ -313,7 +328,7 @@
         </div>
     </div>
 
-    <div id="notificationsPanel" class="notifications-panel">
+    <div id="notificationsPanel" class="notifications-panel glass-effect">
         <div class="notifications-panel-header">
             <h2>Notifications</h2>
             <div>
