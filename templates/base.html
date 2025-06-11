@@ -306,6 +306,17 @@
             justify-content: space-between;
             align-items: center;
         }
+        .post-user {
+            display: flex;
+            align-items: center;
+        }
+        .post-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-right: 8px;
+        }
         .post-time {
             font-size: 0.9rem;
             color: var(--secondary-text-color);
@@ -407,6 +418,14 @@
         .modal-comments {
             max-height: 80vh;
             overflow-y: auto;
+        }
+        .modal-comments h3 {
+            margin-top: 0;
+        }
+        .comments-list {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
         }
 
         .home-post-image {
@@ -708,7 +727,8 @@
                 const commentsTemplate = card.querySelector('.comments-template');
                 const comments = commentsTemplate ? commentsTemplate.innerHTML : '<div>No comments yet.</div>';
                 viewModal.querySelector('.modal-image img').src = imgSrc;
-                viewModal.querySelector('.modal-comments').innerHTML = comments;
+                const list = viewModal.querySelector('.modal-comments .comments-list');
+                if (list) list.innerHTML = comments;
                 viewModal.style.display = 'flex';
             }
 
