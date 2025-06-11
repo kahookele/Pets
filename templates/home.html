@@ -10,7 +10,12 @@
         <div class="create-post-container glass-effect">
             <h3><i class="fa-solid fa-paw"></i> Create Post</h3>
             <form method="post" action="{{ url_for('create_post') }}" enctype="multipart/form-data" class="create-post-form">
-                <input type="file" name="image" required>
+                <div id="fileDropArea" class="file-drop-area">
+                    <i class="fa-solid fa-camera"></i>
+                    <span id="fileMsg">Upload a Pet Photo</span>
+                    <img id="filePreview" class="preview" alt="preview">
+                </div>
+                <input type="file" id="imageInput" name="image" class="file-input-hidden" accept="image/*" required>
                 <input type="text" name="caption" placeholder="Caption">
                 <button type="submit">Upload</button>
             </form>
@@ -48,4 +53,44 @@
         {% endfor %}
 
     </div>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const dropArea = document.getElementById('fileDropArea');
+  const input = document.getElementById('imageInput');
+  const msg = document.getElementById('fileMsg');
+  const preview = document.getElementById('filePreview');
+
+  function handleFiles(files) {
+    if (!files.length) return;
+    const file = files[0];
+    msg.textContent = file.name;
+    if (file.type.startsWith('image/')) {
+      const reader = new FileReader();
+      reader.onload = e => {
+        preview.src = e.target.result;
+        preview.style.display = 'block';
+      };
+      reader.readAsDataURL(file);
+    } else {
+      preview.style.display = 'none';
+    }
+  }
+
+  dropArea.addEventListener('click', () => input.click());
+
+  ['dragenter','dragover'].forEach(evt => {
+    dropArea.addEventListener(evt, e => { e.preventDefault(); dropArea.classList.add('hover'); });
+  });
+  ['dragleave','drop'].forEach(evt => {
+    dropArea.addEventListener(evt, e => { e.preventDefault(); dropArea.classList.remove('hover'); });
+  });
+  dropArea.addEventListener('drop', e => {
+    if (e.dataTransfer.files.length) {
+      input.files = e.dataTransfer.files;
+      handleFiles(input.files);
+    }
+  });
+  input.addEventListener('change', () => handleFiles(input.files));
+});
+</script>
 {% endblock %}

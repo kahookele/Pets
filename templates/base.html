@@ -322,6 +322,45 @@
         -webkit-backdrop-filter: blur(8px);
         color: var(--primary-text-color);
     }
+
+    /* Hide the native file input */
+    .create-post-form .file-input-hidden {
+        display: none;
+    }
+
+    /* Custom drop area for file uploads */
+    .file-drop-area {
+        width: 100%;
+        padding: 25px 20px;
+        border-radius: 12px;
+        border: 2px dashed var(--glass-border-color);
+        background: rgba(255, 255, 255, 0.35);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        color: var(--secondary-text-color);
+        cursor: pointer;
+        transition: background 0.3s, transform 0.2s;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+    }
+    .file-drop-area i {
+        font-size: 2rem;
+        margin-bottom: 8px;
+        color: var(--secondary-text-color);
+    }
+    .file-drop-area:hover,
+    .file-drop-area.hover {
+        background: rgba(255, 255, 255, 0.5);
+        transform: translateY(-2px);
+    }
+    .file-drop-area img.preview {
+        max-width: 100%;
+        margin-top: 10px;
+        border-radius: 10px;
+        display: none;
+    }
     .create-post-form input[type="text"]::placeholder {
         color: var(--secondary-text-color);
     }
