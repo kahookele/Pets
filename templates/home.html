@@ -86,3 +86,64 @@
     </div>
 
 {% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    function attachLikeHandler(form) {
+        form.addEventListener('submit', function(e) {
+            if (window.fetch) {
+                e.preventDefault();
+                fetch(form.action, {method:'POST', headers:{'X-Requested-With':'XMLHttpRequest'}})
+                .then(r => r.json())
+                .then(data => {
+                    const count = form.querySelector('.like-count');
+                    if (count) count.textContent = data.likes_count;
+                    const icon = form.querySelector('i');
+                    if (icon) {
+                        if (data.user_liked) {
+                            icon.classList.remove('fa-regular');
+                            icon.classList.add('fa-solid','liked');
+                        } else {
+                            icon.classList.remove('fa-solid','liked');
+                            icon.classList.add('fa-regular');
+                        }
+                    }
+                });
+            }
+        });
+    }
+
+    document.querySelectorAll('.like-form').forEach(attachLikeHandler);
+
+    function addCommentToDom(data) {
+        const commentHTML = `<div class="comment"><span class="comment-text"><strong>${data.username}</strong>: ${data.text}</span><div class="comment-actions"><form method="post" action="/like_comment/${data.post_id}/${data.comment_id}" class="like-form"><button type="submit" class="like-btn"><i class="fa-regular fa-paw"></i><span class="like-count">0</span></button></form></div></div>`;
+        document.querySelectorAll(`[data-post-id="${data.post_id}"] .comments-template`).forEach(t => {
+            t.insertAdjacentHTML('beforeend', commentHTML);
+            const newForm = t.lastElementChild.querySelector('.like-form');
+            if (newForm) attachLikeHandler(newForm);
+        });
+        const modalList = document.querySelector('.modal-comments .comments-list');
+        if (modalList && document.getElementById('viewPostModal').style.display === 'flex') {
+            modalList.insertAdjacentHTML('beforeend', commentHTML);
+            const newForm = modalList.lastElementChild.querySelector('.like-form');
+            if (newForm) attachLikeHandler(newForm);
+        }
+    }
+
+    document.querySelectorAll('.add-comment-form').forEach(form => {
+        form.addEventListener('submit', function(e) {
+            if (window.fetch) {
+                e.preventDefault();
+                fetch(form.action, {method:'POST', headers:{'X-Requested-With':'XMLHttpRequest'}, body:new FormData(form)})
+                .then(r => r.json())
+                .then(data => {
+                    form.reset();
+                    addCommentToDom(data);
+                });
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

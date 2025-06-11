@@ -893,6 +893,11 @@ def like_post(post_id):
             p_ref.update({'likes': firestore.ArrayRemove([user_uid])})
         else:
             p_ref.update({'likes': firestore.ArrayUnion([user_uid])})
+        doc = p_ref.get()
+        likes = doc.to_dict().get('likes', [])
+    is_ajax = request.is_json or request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+    if is_ajax:
+        return jsonify({'likes_count': len(likes), 'user_liked': user_uid in likes})
     return redirect(request.referrer or url_for('home'))
 
 
@@ -900,14 +905,26 @@ def like_post(post_id):
 @login_required
 def add_comment(post_id):
     user_uid = session.get('user_uid')
-    text = request.form.get('text', '').strip()
+    text = request.form.get('text') if not request.is_json else request.json.get('text', '')
+    text = (text or '').strip()
+    comment_data = None
     if text:
-        db_firestore.collection('posts').document(post_id).collection('comments').add({
+        update_time, doc_ref = db_firestore.collection('posts').document(post_id).collection('comments').add({
             'user_uid': user_uid,
             'text': text,
             'likes': [],
             'timestamp': firestore.SERVER_TIMESTAMP
         })
+        comment_data = {
+            'comment_id': doc_ref.id,
+            'post_id': post_id,
+            'username': get_username(user_uid),
+            'profile_image': get_profile_image(user_uid),
+            'text': text
+        }
+    is_ajax = request.is_json or request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+    if is_ajax:
+        return jsonify(comment_data or {}), 200
     return redirect(request.referrer or url_for('home'))
 
 
@@ -923,6 +940,11 @@ def like_comment(post_id, comment_id):
             c_ref.update({'likes': firestore.ArrayRemove([user_uid])})
         else:
             c_ref.update({'likes': firestore.ArrayUnion([user_uid])})
+        doc = c_ref.get()
+        likes = doc.to_dict().get('likes', [])
+    is_ajax = request.is_json or request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+    if is_ajax:
+        return jsonify({'likes_count': len(likes), 'user_liked': user_uid in likes})
     return redirect(request.referrer or url_for('home'))
 
 
