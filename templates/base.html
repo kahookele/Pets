@@ -301,6 +301,89 @@
             max-width: 500px;
         }
 
+        .post-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .post-time {
+            font-size: 0.9rem;
+            color: var(--secondary-text-color);
+        }
+
+        .like-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .like-btn .fa-paw {
+            color: var(--secondary-text-color);
+        }
+        .like-btn .fa-paw.liked {
+            color: red;
+        }
+
+        .post-options { position: relative; }
+        .options-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+        }
+        .options-menu {
+            position: absolute;
+            right: 0;
+            top: 20px;
+            background: var(--main-bg-color);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 5px 10px;
+            display: none;
+        }
+        .options-menu.show { display: block; }
+
+        .comments {
+            margin-top: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .comment {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .comment-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .delete-comment-btn,
+        .delete-post-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--secondary-text-color);
+        }
+
+        .modal-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            max-width: 800px;
+        }
+        .modal-image img {
+            width: 100%;
+            height: auto;
+            border-radius: 8px;
+        }
+        .modal-comments {
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
         .home-post-image {
             width: 100%;
             max-height: 600px;
@@ -563,6 +646,48 @@
                 });
             }
             if (input) input.addEventListener('change', () => handleFiles(input.files));
+
+            // Overflow menu toggle
+            document.querySelectorAll('.post-options').forEach(opts => {
+                const btn = opts.querySelector('.options-btn');
+                const menu = opts.querySelector('.options-menu');
+                if (btn && menu) {
+                    btn.addEventListener('click', e => {
+                        e.stopPropagation();
+                        menu.classList.toggle('show');
+                    });
+                }
+            });
+            document.addEventListener('click', () => {
+                document.querySelectorAll('.options-menu').forEach(m => m.classList.remove('show'));
+            });
+
+            // Confirm delete post/comment
+            document.querySelectorAll('.delete-post-form, .delete-comment-form').forEach(form => {
+                form.addEventListener('submit', e => {
+                    if (!confirm('Are you sure you want to delete?')) {
+                        e.preventDefault();
+                    }
+                });
+            });
+
+            // View post modal
+            const viewModal = document.getElementById('viewPostModal');
+            const closeView = document.getElementById('closeViewPost');
+            document.querySelectorAll('.post').forEach(card => {
+                card.addEventListener('click', e => {
+                    if (e.target.closest('button') || e.target.closest('form') || e.target.closest('.options-menu')) return;
+                    const imgSrc = card.querySelector('.home-post-image').src;
+                    const comments = card.querySelector('.comments').innerHTML;
+                    viewModal.querySelector('.modal-image img').src = imgSrc;
+                    viewModal.querySelector('.modal-comments').innerHTML = comments;
+                    viewModal.style.display = 'flex';
+                });
+            });
+            if (closeView) closeView.addEventListener('click', () => viewModal.style.display = 'none');
+            if (viewModal) viewModal.addEventListener('click', e => {
+                if (e.target === viewModal) viewModal.style.display = 'none';
+            });
         });
         </script>
 
