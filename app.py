@@ -82,18 +82,24 @@ def home():
             c_data = c_doc.to_dict()
             comments.append({
                 'id': c_doc.id,
+                'user_uid': c_data.get('user_uid'),
                 'username': get_username(c_data.get('user_uid')),
                 'text': c_data.get('text'),
                 'likes_count': len(c_data.get('likes', [])),
                 'user_liked': user_uid in c_data.get('likes', [])
             })
+        timestamp = p_data.get('timestamp')
+        try:
+            formatted = timestamp.strftime('%m/%d/%Y') if timestamp else ''
+        except Exception:
+            formatted = str(timestamp)
         posts.append({
             'id': p_doc.id,
             'username': get_username(p_data.get('user_uid')),
             'user_uid': p_data.get('user_uid'),
             'image_url': p_data.get('image_url'),
             'caption': p_data.get('caption'),
-            'timestamp': p_data.get('timestamp'),
+            'timestamp': formatted,
             'likes_count': len(p_data.get('likes', [])),
             'user_liked': user_uid in p_data.get('likes', []),
             'comments': comments
@@ -900,6 +906,21 @@ def like_comment(post_id, comment_id):
             c_ref.update({'likes': firestore.ArrayRemove([user_uid])})
         else:
             c_ref.update({'likes': firestore.ArrayUnion([user_uid])})
+    return redirect(request.referrer or url_for('home'))
+
+
+@app.route('/delete_comment/<string:post_id>/<string:comment_id>', methods=['POST'])
+@login_required
+def delete_comment(post_id, comment_id):
+    """Allow a user to delete their own comment."""
+    user_uid = session.get('user_uid')
+    c_ref = db_firestore.collection('posts').document(post_id).collection('comments').document(comment_id)
+    doc = c_ref.get()
+    if doc.exists and doc.to_dict().get('user_uid') == user_uid:
+        c_ref.delete()
+        flash('Comment deleted.', 'success')
+    else:
+        flash('You are not authorized to delete this comment.', 'error')
     return redirect(request.referrer or url_for('home'))
 
 
