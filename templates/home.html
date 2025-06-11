@@ -7,8 +7,10 @@
         {% for post in posts %}
         <div class="post glass-effect" data-post-id="{{ post.id }}">
             <div class="post-header">
-                <strong>{{ post.username }}</strong>
-                <span class="post-time">{{ post.timestamp }}</span>
+                <div class="post-user">
+                    <img src="{{ post.profile_image }}" alt="{{ post.username }}" class="post-avatar">
+                    <strong>{{ post.username }}</strong>
+                </div>
                 {% if post.user_uid == session['user_uid'] %}
                 <div class="post-options">
                     <button class="options-btn"><i class="fa-solid fa-ellipsis"></i></button>
@@ -40,8 +42,23 @@
                 {% for comment in post.comments %}
                 <div class="comment">
                     <span class="comment-text"><strong>{{ comment.username }}</strong>: {{ comment.text }}</span>
+                    <div class="comment-actions">
+                        <form method="post" action="{{ url_for('like_comment', post_id=post.id, comment_id=comment.id) }}" class="like-form">
+                            <button type="submit" class="like-btn">
+                                {% if comment.user_liked %}
+                                <i class="fa-solid fa-paw liked"></i>
+                                {% else %}
+                                <i class="fa-regular fa-paw"></i>
+                                {% endif %}
+                                <span class="like-count">{{ comment.likes_count }}</span>
+                            </button>
+                        </form>
+                    </div>
                 </div>
                 {% endfor %}
+                {% if post.comments|length == 0 %}
+                <div>No comments yet.</div>
+                {% endif %}
             </template>
 
             <a href="#" class="view-comments-link">View all {{ post.comments|length }} comments to the post</a>
@@ -53,7 +70,10 @@
         <div class="modal-content glass-effect modal-grid">
             <button class="modal-close" id="closeViewPost">&times;</button>
             <div class="modal-image"><img src="" alt="post image"></div>
-            <div class="modal-comments"></div>
+            <div class="modal-comments">
+                <h3>Comments</h3>
+                <div class="comments-list"></div>
+            </div>
         </div>
     </div>
 

@@ -64,6 +64,19 @@ def get_username(user_uid):
         print(f"Error fetching username for {user_uid}: {e}")
     return 'Unknown User'
 
+def get_profile_image(user_uid):
+    """Return the user's profile image or a default placeholder."""
+    default_img = url_for('static', filename='images/default_avatar.png')
+    if not user_uid:
+        return default_img
+    try:
+        user_doc = db_firestore.collection('users').document(user_uid).get()
+        if user_doc.exists:
+            return user_doc.to_dict().get('profile_image', default_img)
+    except Exception as e:
+        print(f"Error fetching profile image for {user_uid}: {e}")
+    return default_img
+
 # --- Your existing routes (home, profile, edit_profile, etc. 그대로 유지) ---
 # view_profile_page now includes follow_status logic
 @app.route("/")
@@ -84,6 +97,7 @@ def home():
                 'id': c_doc.id,
                 'user_uid': c_data.get('user_uid'),
                 'username': get_username(c_data.get('user_uid')),
+                'profile_image': get_profile_image(c_data.get('user_uid')),
                 'text': c_data.get('text'),
                 'likes_count': len(c_data.get('likes', [])),
                 'user_liked': user_uid in c_data.get('likes', [])
@@ -96,6 +110,7 @@ def home():
         posts.append({
             'id': p_doc.id,
             'username': get_username(p_data.get('user_uid')),
+            'profile_image': get_profile_image(p_data.get('user_uid')),
             'user_uid': p_data.get('user_uid'),
             'image_url': p_data.get('image_url'),
             'caption': p_data.get('caption'),
@@ -182,6 +197,7 @@ def view_profile_page(view_username):
                 comments.append({
                     'id': c_doc.id,
                     'username': get_username(c_data.get('user_uid')),
+                    'profile_image': get_profile_image(c_data.get('user_uid')),
                     'text': c_data.get('text'),
                     'likes_count': len(c_data.get('likes', [])),
                     'user_liked': logged_in_user_uid in c_data.get('likes', [])
@@ -189,6 +205,7 @@ def view_profile_page(view_username):
             posts.append({
                 'id': p_doc.id,
                 'username': get_username(p_data.get('user_uid')),
+                'profile_image': get_profile_image(p_data.get('user_uid')),
                 'user_uid': p_data.get('user_uid'),
                 'image_url': p_data.get('image_url'),
                 'caption': p_data.get('caption'),
