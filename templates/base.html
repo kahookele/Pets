@@ -321,9 +321,34 @@
         }
         .like-btn .fa-paw {
             color: var(--secondary-text-color);
+            font-size: 1.5rem;
         }
         .like-btn .fa-paw.liked {
             color: red;
+        }
+        .post-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 8px;
+        }
+        .comment-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            color: var(--secondary-text-color);
+        }
+        .comment-btn .fa-comment {
+            font-size: 1.5rem;
+        }
+        .view-comments-link {
+            display: block;
+            margin-top: 8px;
+            color: var(--link-color);
+            text-decoration: none;
+            cursor: pointer;
         }
 
         .post-options { position: relative; }
@@ -372,7 +397,7 @@
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 20px;
-            max-width: 800px;
+            max-width: 900px;
         }
         .modal-image img {
             width: 100%;
@@ -492,6 +517,9 @@
             padding: 20px;
             border-radius: 12px;
             background: var(--main-bg-color);
+        }
+        .view-post-modal .modal-content {
+            max-width: 900px;
         }
         .post-modal .modal-close {
             position: absolute;
@@ -674,16 +702,31 @@
             // View post modal
             const viewModal = document.getElementById('viewPostModal');
             const closeView = document.getElementById('closeViewPost');
-            document.querySelectorAll('.post').forEach(card => {
-                card.addEventListener('click', e => {
-                    if (e.target.closest('button') || e.target.closest('form') || e.target.closest('.options-menu')) return;
-                    const imgSrc = card.querySelector('.home-post-image').src;
-                    const comments = card.querySelector('.comments').innerHTML;
-                    viewModal.querySelector('.modal-image img').src = imgSrc;
-                    viewModal.querySelector('.modal-comments').innerHTML = comments;
-                    viewModal.style.display = 'flex';
+
+            function openViewModal(card) {
+                const imgSrc = card.querySelector('.home-post-image').src;
+                const comments = card.querySelector('.comments').innerHTML;
+                viewModal.querySelector('.modal-image img').src = imgSrc;
+                viewModal.querySelector('.modal-comments').innerHTML = comments;
+                viewModal.style.display = 'flex';
+            }
+
+            document.querySelectorAll('.comment-btn.open-comments-modal').forEach(btn => {
+                btn.addEventListener('click', e => {
+                    e.stopPropagation();
+                    const card = btn.closest('.post');
+                    if (card) openViewModal(card);
                 });
             });
+
+            document.querySelectorAll('.view-comments-link').forEach(link => {
+                link.addEventListener('click', e => {
+                    e.preventDefault();
+                    const card = link.closest('.post');
+                    if (card) openViewModal(card);
+                });
+            });
+
             if (closeView) closeView.addEventListener('click', () => viewModal.style.display = 'none');
             if (viewModal) viewModal.addEventListener('click', e => {
                 if (e.target === viewModal) viewModal.style.display = 'none';
