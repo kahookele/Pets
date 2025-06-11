@@ -193,6 +193,47 @@
         color: white;
     }
 
+    .profile-gallery {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 10px;
+    }
+
+    .profile-gallery-thumb {
+        width: 100%;
+        aspect-ratio: 1 / 1;
+        object-fit: cover;
+        border-radius: 8px;
+        cursor: pointer;
+    }
+
+    .gallery-modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.8);
+        display: none;
+        justify-content: center;
+        align-items: center;
+        z-index: 1005;
+    }
+
+    .gallery-modal .modal-image {
+        max-width: 90%;
+        max-height: 90%;
+    }
+
+    .gallery-modal .close {
+        position: absolute;
+        top: 20px;
+        right: 30px;
+        font-size: 2rem;
+        color: #fff;
+        cursor: pointer;
+    }
+
 </style>
 
 {# Main conditional block: can the user view this profile? #}
@@ -261,35 +302,35 @@
         <hr style="border: 0; border-top: 1px solid #dbdbdb; margin: 20px 0;">
 
         {% if posts %}
+        <div class="profile-gallery">
             {% for post in posts %}
-            <div class="post glass-effect">
-                <p><strong>{{ post.username }}</strong> - {{ post.timestamp }}</p>
-                <img src="{{ post.image_url }}" alt="post image" style="max-width:300px;">
-                <p>{{ post.caption }}</p>
-                <form method="post" action="{{ url_for('like_post', post_id=post.id) }}">
-                    <button type="submit">{{ 'Unlike' if post.user_liked else 'Like' }} ({{ post.likes_count }})</button>
-                </form>
-                {% if post.user_uid == session['user_uid'] %}
-                <form method="post" action="{{ url_for('delete_post', post_id=post.id) }}" style="display:inline;">
-                    <button type="submit">Delete</button>
-                </form>
-                {% endif %}
-                <div class="comments" style="margin-top:10px;">
-                    {% for comment in post.comments %}
-                    <div class="comment" style="margin-bottom:5px;">
-                        <strong>{{ comment.username }}</strong>: {{ comment.text }}
-                        <form method="post" action="{{ url_for('like_comment', post_id=post.id, comment_id=comment.id) }}" style="display:inline;">
-                            <button type="submit">{{ 'Unlike' if comment.user_liked else 'Like' }} ({{ comment.likes_count }})</button>
-                        </form>
-                    </div>
-                    {% endfor %}
-                    <form method="post" action="{{ url_for('add_comment', post_id=post.id) }}">
-                        <input type="text" name="text" placeholder="Add a comment" required>
-                        <button type="submit">Comment</button>
-                    </form>
-                </div>
-            </div>
+            <img src="{{ post.image_url }}" alt="post image" class="profile-gallery-thumb" data-full="{{ post.image_url }}">
             {% endfor %}
+        </div>
+        <div id="galleryModal" class="gallery-modal">
+            <span class="close">&times;</span>
+            <img id="galleryModalImage" class="modal-image" alt="full size">
+        </div>
+        <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const modal = document.getElementById('galleryModal');
+            const modalImg = document.getElementById('galleryModalImage');
+            document.querySelectorAll('.profile-gallery-thumb').forEach(img => {
+                img.addEventListener('click', function(){
+                    modalImg.src = this.dataset.full;
+                    modal.style.display = 'flex';
+                });
+            });
+            modal.querySelector('.close').addEventListener('click', () => {
+                modal.style.display = 'none';
+            });
+            modal.addEventListener('click', e => {
+                if (e.target === modal) {
+                    modal.style.display = 'none';
+                }
+            });
+        });
+        </script>
         {% else %}
         <div style="text-align:center; padding: 40px 0; color: var(--secondary-text-color, #606770);">
             <i class="bi bi-camera" style="font-size: 2rem; margin-bottom:10px;"></i>
