@@ -705,7 +705,8 @@
 
             function openViewModal(card) {
                 const imgSrc = card.querySelector('.home-post-image').src;
-                const comments = card.querySelector('.comments').innerHTML;
+                const commentsTemplate = card.querySelector('.comments-template');
+                const comments = commentsTemplate ? commentsTemplate.innerHTML : '<div>No comments yet.</div>';
                 viewModal.querySelector('.modal-image img').src = imgSrc;
                 viewModal.querySelector('.modal-comments').innerHTML = comments;
                 viewModal.style.display = 'flex';

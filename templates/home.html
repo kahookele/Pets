@@ -35,34 +35,15 @@
                 <button type="button" class="comment-btn open-comments-modal"><i class="fa-regular fa-comment"></i></button>
             </div>
             <p>{{ post.caption }}</p>
-            <div class="comments">
+
+            <template class="comments-template">
                 {% for comment in post.comments %}
                 <div class="comment">
                     <span class="comment-text"><strong>{{ comment.username }}</strong>: {{ comment.text }}</span>
-                    <div class="comment-actions">
-                        <form method="post" action="{{ url_for('like_comment', post_id=post.id, comment_id=comment.id) }}" class="comment-like-form">
-                            <button type="submit" class="like-btn">
-                                {% if comment.user_liked %}
-                                <i class="fa-solid fa-paw liked"></i>
-                                {% else %}
-                                <i class="fa-regular fa-paw"></i>
-                                {% endif %}
-                                <span class="like-count">{{ comment.likes_count }}</span>
-                            </button>
-                        </form>
-                        {% if comment.user_uid == session['user_uid'] %}
-                        <form method="post" action="{{ url_for('delete_comment', post_id=post.id, comment_id=comment.id) }}" class="delete-comment-form">
-                            <button type="submit" class="delete-comment-btn"><i class="fa-solid fa-trash"></i></button>
-                        </form>
-                        {% endif %}
-                    </div>
                 </div>
                 {% endfor %}
-                <form method="post" action="{{ url_for('add_comment', post_id=post.id) }}" class="add-comment-form">
-                    <input type="text" name="text" placeholder="Add a comment" required>
-                    <button type="submit">Comment</button>
-                </form>
-            </div>
+            </template>
+
             <a href="#" class="view-comments-link">View all {{ post.comments|length }} comments to the post</a>
         </div>
         {% endfor %}
