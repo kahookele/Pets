@@ -378,6 +378,38 @@
         transform: translateY(-2px);
     }
 
+    /* Modal for creating a post */
+    .post-modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.5);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 1002;
+    }
+    .post-modal .modal-content {
+        position: relative;
+        max-width: 500px;
+        width: 90%;
+        padding: 20px;
+        border-radius: 12px;
+        background: var(--main-bg-color);
+    }
+    .post-modal .modal-close {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+        cursor: pointer;
+        color: var(--primary-text-color);
+    }
+
     </style>
     {% block head_extra %}{% endblock %}
 </head><body>
@@ -423,6 +455,83 @@
         </div>
         <ul id="notificationsList"></ul>
     </div>
+
+    <div id="postModal" class="post-modal">
+        <div class="modal-content glass-effect">
+            <button id="closePostModal" class="modal-close">&times;</button>
+            <div class="create-post-container">
+                <h3><i class="fa-solid fa-paw"></i> Create Post</h3>
+                <form method="post" action="{{ url_for('create_post') }}" enctype="multipart/form-data" class="create-post-form">
+                    <div id="fileDropArea" class="file-drop-area">
+                        <i class="fa-solid fa-camera"></i>
+                        <span id="fileMsg">Upload a Pet Photo</span>
+                        <img id="filePreview" class="preview" alt="preview">
+                    </div>
+                    <input type="file" id="imageInput" name="image" class="file-input-hidden" accept="image/*" required>
+                    <input type="text" name="caption" placeholder="Caption">
+                    <button type="submit">Upload</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const openBtn = document.getElementById('openPostModal');
+        const modal = document.getElementById('postModal');
+        const closeBtn = document.getElementById('closePostModal');
+        const dropArea = document.getElementById('fileDropArea');
+        const input = document.getElementById('imageInput');
+        const msg = document.getElementById('fileMsg');
+        const preview = document.getElementById('filePreview');
+
+        if (openBtn) openBtn.addEventListener('click', function(e){
+            e.preventDefault();
+            if (modal) modal.style.display = 'flex';
+        });
+        if (closeBtn) closeBtn.addEventListener('click', function(){
+            if (modal) modal.style.display = 'none';
+        });
+        document.addEventListener('click', function(e){
+            if (modal && modal.style.display === 'flex' && !modal.querySelector('.modal-content').contains(e.target) && e.target !== openBtn) {
+                modal.style.display = 'none';
+            }
+        });
+
+        function handleFiles(files) {
+            if (!files.length) return;
+            const file = files[0];
+            msg.textContent = file.name;
+            if (file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = e => {
+                    preview.src = e.target.result;
+                    preview.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            } else {
+                preview.style.display = 'none';
+            }
+        }
+
+        if (dropArea) {
+            dropArea.addEventListener('click', () => input.click());
+            ['dragenter','dragover'].forEach(evt => {
+                dropArea.addEventListener(evt, e => { e.preventDefault(); dropArea.classList.add('hover'); });
+            });
+            ['dragleave','drop'].forEach(evt => {
+                dropArea.addEventListener(evt, e => { e.preventDefault(); dropArea.classList.remove('hover'); });
+            });
+            dropArea.addEventListener('drop', e => {
+                if (e.dataTransfer.files.length) {
+                    input.files = e.dataTransfer.files;
+                    handleFiles(input.files);
+                }
+            });
+        }
+        if (input) input.addEventListener('change', () => handleFiles(input.files));
+    });
+    </script>
 
 </body>
 </html>
