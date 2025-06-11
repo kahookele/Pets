@@ -7,6 +7,7 @@
   .chat-container {
     max-width: 600px;
     margin: 0 auto;
+    padding: 20px;
     display: flex;
     flex-direction: column;
     height: 80vh;
@@ -86,7 +87,7 @@
 {% endblock %}
 
 {% block content %}
-<div class="chat-container">
+<div class="chat-container glass-effect">
   <h2>Conversation</h2>
   <div id="chat-box">
       {% for message in messages %}

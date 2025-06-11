@@ -198,7 +198,7 @@
 {# Main conditional block: can the user view this profile? #}
 {% if can_view_profile %}
     {# This is the FULL PROFILE view - for owners, or public profiles, or private profiles the viewer has access to #}
-    <div class="ig-profile-container">
+    <div class="ig-profile-container glass-effect">
         <header class="ig-profile-header">
             <div class="ig-profile-picture-wrapper">
                 {% if user.profile_image %}
@@ -262,7 +262,7 @@
 
         {% if posts %}
             {% for post in posts %}
-            <div class="post" style="border:1px solid #ccc; padding:10px; margin-bottom:20px;">
+            <div class="post glass-effect">
                 <p><strong>{{ post.username }}</strong> - {{ post.timestamp }}</p>
                 <img src="{{ post.image_url }}" alt="post image" style="max-width:300px;">
                 <p>{{ post.caption }}</p>
@@ -300,7 +300,7 @@
 {% else %}
     {# This is the LIMITED PUBLIC VIEW for PRIVATE profiles (can_view_profile is False) #}
     {% if user %}
-        <div class="ig-profile-container">
+        <div class="ig-profile-container glass-effect">
             <header class="ig-profile-header">
                 <div class="ig-profile-picture-wrapper">
                     {% if user.profile_image %}
@@ -366,7 +366,7 @@
         </div>
     {% else %}
         {# Fallback if user data somehow wasn't passed #}
-        <div class="ig-profile-container private-profile-message">
+        <div class="ig-profile-container private-profile-message glass-effect">
             <p>This profile could not be loaded.</p>
         </div>
     {% endif %}
