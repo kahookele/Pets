@@ -356,7 +356,7 @@
         }
         .file-drop-area img.preview {
             max-width: 100%;
-            max-height: 50vh; /* Prevent oversized previews */
+            max-height: 30vh; /* Prevent oversized previews */
             margin-top: 10px;
             border-radius: 10px;
             display: none;
@@ -529,6 +529,7 @@
                     reader.onload = e => {
                         preview.src = e.target.result;
                         preview.style.display = 'block';
+                        msg.style.display = "none";
                     };
                     reader.readAsDataURL(file);
                 } else {
