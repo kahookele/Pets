@@ -7,6 +7,7 @@
   .messages-container {
     max-width: 600px;
     margin: 0 auto;
+    padding: 20px;
   }
   .messages-search {
     display: flex;
@@ -53,7 +54,7 @@
 {% endblock %}
 
 {% block content %}
-<div class="messages-container">
+<div class="messages-container glass-effect">
   <h2>Start a Conversation</h2>
   <form method="get" action="{{ url_for('messages_home') }}" class="messages-search">
       <input type="text" name="q" placeholder="Search following" value="{{ query|default('') }}">

@@ -3,9 +3,6 @@
 {% block title %}Home | Pet App{% endblock %}
 
 {% block content %}
-<style>
-
-</style>
     <div class="main-content">
         <h2>Home Page</h2>
         <p>Welcome to the Pet App! Find and share your favorite pet moments here.</p>
@@ -19,7 +16,7 @@
 
         <h2>Recent Posts</h2>
         {% for post in posts %}
-        <div class="post" style="border:1px solid #ccc; padding:10px; margin-bottom:20px;">
+        <div class="post glass-effect">
             <p><strong>{{ post.username }}</strong> - {{ post.timestamp }}</p>
             <img src="{{ post.image_url }}" alt="post image" style="max-width:300px;">
             <p>{{ post.caption }}</p>
