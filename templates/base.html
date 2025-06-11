@@ -300,6 +300,45 @@
         border-radius: 12px;
     }
 
+    .create-post-container {
+        max-width: 500px;
+        margin: 0 auto 30px;
+        padding: 20px;
+        text-align: center;
+    }
+    .create-post-form {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+    .create-post-form input[type="file"],
+    .create-post-form input[type="text"] {
+        width: 100%;
+        padding: 10px;
+        border-radius: 10px;
+        border: 1px solid var(--glass-border-color);
+        background: rgba(255, 255, 255, 0.4);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        color: var(--primary-text-color);
+    }
+    .create-post-form input[type="text"]::placeholder {
+        color: var(--secondary-text-color);
+    }
+    .create-post-form button {
+        padding: 10px;
+        border: none;
+        border-radius: 10px;
+        background: rgba(255, 255, 255, 0.6);
+        cursor: pointer;
+        color: var(--primary-text-color);
+        transition: background 0.3s, transform 0.2s;
+    }
+    .create-post-form button:hover {
+        background: rgba(255, 255, 255, 0.8);
+        transform: translateY(-2px);
+    }
+
     </style>
     {% block head_extra %}{% endblock %}
 </head><body>
