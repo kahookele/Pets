@@ -740,6 +740,31 @@
                 });
             });
 
+            // Utility for AJAX like buttons
+            function attachLikeHandler(form) {
+                form.addEventListener('submit', function(e) {
+                    if (window.fetch) {
+                        e.preventDefault();
+                        fetch(form.action, {method:'POST', headers:{'X-Requested-With':'XMLHttpRequest'}})
+                        .then(r => r.json())
+                        .then(data => {
+                            const count = form.querySelector('.like-count');
+                            if (count) count.textContent = data.likes_count;
+                            const icon = form.querySelector('i');
+                            if (icon) {
+                                if (data.user_liked) {
+                                    icon.classList.remove('fa-regular');
+                                    icon.classList.add('fa-solid','liked');
+                                } else {
+                                    icon.classList.remove('fa-solid','liked');
+                                    icon.classList.add('fa-regular');
+                                }
+                            }
+                        });
+                    }
+                });
+            }
+
             // View post modal
             const viewModal = document.getElementById('viewPostModal');
             const closeView = document.getElementById('closeViewPost');
@@ -751,7 +776,10 @@
                 const postId = card.dataset.postId;
                 viewModal.querySelector('.modal-image img').src = imgSrc;
                 const list = viewModal.querySelector('.modal-comments .comments-list');
-                if (list) list.innerHTML = comments;
+                if (list) {
+                    list.innerHTML = comments;
+                    list.querySelectorAll('.like-form').forEach(attachLikeHandler);
+                }
                 const form = viewModal.querySelector('.modal-comment-form');
                 if (form) form.action = `/add_comment/${postId}`;
                 viewModal.style.display = 'flex';
