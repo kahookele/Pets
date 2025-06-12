@@ -199,41 +199,15 @@
         gap: 10px;
     }
 
+    .profile-post {
+        position: relative;
+    }
+
     .profile-gallery-thumb {
         width: 100%;
         aspect-ratio: 1 / 1;
         object-fit: cover;
         border-radius: 8px;
-        cursor: pointer;
-    }
-
-    .gallery-modal {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0,0,0,0.8);
-        display: none;
-        justify-content: center;
-        align-items: center;
-        z-index: 1005;
-    }
-
-    .gallery-modal .modal-image {
-        width: 90%;
-        max-width: 600px;
-        max-height: 80vh;
-        border-radius: 12px;
-        object-fit: contain;
-    }
-
-    .gallery-modal .close {
-        position: absolute;
-        top: 20px;
-        right: 30px;
-        font-size: 2rem;
-        color: #fff;
         cursor: pointer;
     }
 
@@ -307,30 +281,133 @@
         {% if posts %}
         <div class="profile-gallery">
             {% for post in posts %}
-            <img src="{{ post.image_url }}" alt="post image" class="profile-gallery-thumb" data-full="{{ post.image_url }}">
+            <div class="post profile-post" data-post-id="{{ post.id }}">
+                <img src="{{ post.image_url }}" alt="post image" class="home-post-image profile-gallery-thumb">
+                <template class="comments-template">
+                    {% for comment in post.comments %}
+                    <div class="comment">
+                        <span class="comment-text"><strong>{{ comment.username }}</strong>: {{ comment.text }}</span>
+                        <div class="comment-actions">
+                            <form method="post" action="{{ url_for('like_comment', post_id=post.id, comment_id=comment.id) }}" class="like-form">
+                                <button type="submit" class="like-btn">
+                                    {% if comment.user_liked %}
+                                    <i class="fa-solid fa-paw liked"></i>
+                                    {% else %}
+                                    <i class="fa-regular fa-paw"></i>
+                                    {% endif %}
+                                    <span class="like-count">{{ comment.likes_count }}</span>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                    {% endfor %}
+                    {% if post.comments|length == 0 %}
+                    <div>No comments yet.</div>
+                    {% endif %}
+                </template>
+            </div>
             {% endfor %}
         </div>
-        <div id="galleryModal" class="gallery-modal">
-            <span class="close">&times;</span>
-            <img id="galleryModalImage" class="modal-image" alt="full size">
+
+        <div id="viewPostModal" class="post-modal view-post-modal">
+            <div class="modal-content glass-effect modal-grid">
+                <button class="modal-close" id="closeViewPost">&times;</button>
+                <div class="modal-image"><img src="" alt="post image"></div>
+                <div class="modal-comments">
+                    <h3>Comments</h3>
+                    <div class="comments-list"></div>
+                    <form method="post" action="" class="add-comment-form modal-comment-form">
+                        <input type="text" name="text" placeholder="Add a comment..." required>
+                        <button type="submit">Post</button>
+                    </form>
+                </div>
+            </div>
         </div>
+
         <script>
         document.addEventListener('DOMContentLoaded', function() {
-            const modal = document.getElementById('galleryModal');
-            const modalImg = document.getElementById('galleryModalImage');
+            function attachLikeHandler(form) {
+                form.addEventListener('submit', function(e) {
+                    if (window.fetch) {
+                        e.preventDefault();
+                        fetch(form.action, {method:'POST', headers:{'X-Requested-With':'XMLHttpRequest'}})
+                        .then(r => r.json())
+                        .then(data => {
+                            const count = form.querySelector('.like-count');
+                            if (count) count.textContent = data.likes_count;
+                            const icon = form.querySelector('i');
+                            if (icon) {
+                                if (data.user_liked) {
+                                    icon.classList.remove('fa-regular');
+                                    icon.classList.add('fa-solid','liked');
+                                } else {
+                                    icon.classList.remove('fa-solid','liked');
+                                    icon.classList.add('fa-regular');
+                                }
+                            }
+                        });
+                    }
+                });
+            }
+
+            function addCommentToDom(data) {
+                const commentHTML = `<div class="comment"><span class="comment-text"><strong>${data.username}</strong>: ${data.text}</span><div class="comment-actions"><form method="post" action="/like_comment/${data.post_id}/${data.comment_id}" class="like-form"><button type="submit" class="like-btn"><i class="fa-regular fa-paw"></i><span class="like-count">0</span></button></form></div></div>`;
+                document.querySelectorAll(`[data-post-id="${data.post_id}"] .comments-template`).forEach(t => {
+                    t.insertAdjacentHTML('beforeend', commentHTML);
+                    const newForm = t.lastElementChild.querySelector('.like-form');
+                    if (newForm) attachLikeHandler(newForm);
+                });
+                const modalList = document.querySelector('.modal-comments .comments-list');
+                if (modalList && document.getElementById('viewPostModal').style.display === 'flex') {
+                    modalList.insertAdjacentHTML('beforeend', commentHTML);
+                    const newForm = modalList.lastElementChild.querySelector('.like-form');
+                    if (newForm) attachLikeHandler(newForm);
+                }
+            }
+
+            const viewModal = document.getElementById('viewPostModal');
+            const closeView = document.getElementById('closeViewPost');
+
+            function openViewModal(card) {
+                const imgSrc = card.querySelector('.home-post-image').src;
+                const commentsTemplate = card.querySelector('.comments-template');
+                const comments = commentsTemplate ? commentsTemplate.innerHTML : '<div>No comments yet.</div>';
+                const postId = card.dataset.postId;
+                viewModal.querySelector('.modal-image img').src = imgSrc;
+                const list = viewModal.querySelector('.modal-comments .comments-list');
+                if (list) {
+                    list.innerHTML = comments;
+                    list.querySelectorAll('.like-form').forEach(attachLikeHandler);
+                }
+                const form = viewModal.querySelector('.modal-comment-form');
+                if (form) form.action = `/add_comment/${postId}`;
+                viewModal.style.display = 'flex';
+            }
+
             document.querySelectorAll('.profile-gallery-thumb').forEach(img => {
-                img.addEventListener('click', function(){
-                    modalImg.src = this.dataset.full;
-                    modal.style.display = 'flex';
+                img.addEventListener('click', function() {
+                    const card = img.closest('.post');
+                    if (card) openViewModal(card);
                 });
             });
-            modal.querySelector('.close').addEventListener('click', () => {
-                modal.style.display = 'none';
+
+            document.querySelectorAll('.add-comment-form').forEach(form => {
+                form.addEventListener('submit', function(e) {
+                    if (window.fetch) {
+                        e.preventDefault();
+                        fetch(form.action, {method:'POST', headers:{'X-Requested-With':'XMLHttpRequest'}, body:new FormData(form)})
+                        .then(r => r.json())
+                        .then(data => {
+                            form.reset();
+                            addCommentToDom(data);
+                        });
+                    }
+                });
             });
-            modal.addEventListener('click', e => {
-                if (e.target === modal) {
-                    modal.style.display = 'none';
-                }
+
+            if (closeView) closeView.addEventListener('click', () => viewModal.style.display = 'none');
+            if (viewModal) viewModal.addEventListener('click', e => {
+                if (e.target === viewModal) viewModal.style.display = 'none';
             });
         });
         </script>
