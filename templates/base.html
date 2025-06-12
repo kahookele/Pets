@@ -278,6 +278,14 @@
             .notifications-panel { left: var(--sidebar-actual-width-narrow); }
         }
 
+        @media (max-width: 600px) {
+            .search-panel {
+                width: 100%;
+                left: 0;
+                transform: translateX(-100%);
+            }
+        }
+
         /* General Link Styling */
         a {
             color: var(--link-color);
