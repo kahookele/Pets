@@ -230,6 +230,47 @@
         text-align: center;
     }
 
+    /* Mobile responsiveness */
+    @media (max-width: 768px) {
+        .sidebar {
+            width: var(--sidebar-actual-width-narrow);
+        }
+        .sidebar .sidebar-label {
+            opacity: 0;
+            max-width: 0;
+            font-size: 0;
+            overflow: hidden;
+            margin-left: -10px;
+            padding: 0;
+            white-space: normal;
+        }
+        .sidebar .sidebar-title {
+            font-size: 1rem;
+            padding: 0 5px 10px 5px;
+            margin-bottom: 15px;
+            opacity: 0;
+            max-height: 0;
+            overflow: hidden;
+        }
+        .sidebar a#searchIconToggle,
+        .sidebar li a {
+            justify-content: center;
+            gap: 0;
+            padding-left: 5px;
+            padding-right: 5px;
+        }
+        .sidebar .sidebar-dog-item {
+            opacity: 0;
+            max-height: 0;
+            overflow: hidden;
+            padding: 0;
+            margin: 0;
+        }
+        .sidebar .sidebar-section-title {
+            display: none;
+        }
+    }
+
 </style>
 
 <div class="sidebar" id="mainSidebar"> <div class="sidebar-title">Pets</div>
