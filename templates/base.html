@@ -272,6 +272,12 @@
             .notifications-panel { width: 100%; }
         }
 
+        @media (max-width: 768px) {
+            .app-container { grid-template-columns: var(--sidebar-actual-width-narrow) 1fr; }
+            .search-panel,
+            .notifications-panel { left: var(--sidebar-actual-width-narrow); }
+        }
+
         /* General Link Styling */
         a {
             color: var(--link-color);
