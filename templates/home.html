@@ -5,7 +5,7 @@
 {% block content %}
     <div class="main-content">
         {% for post in posts %}
-        <div class="post glass-effect" data-post-id="{{ post.id }}">
+        <div class="post glass-effect" data-post-id="{{ post.id }}" data-post-owner="{{ post.user_uid }}">
             <div class="post-header">
                 <div class="post-user">
                     <img src="{{ post.profile_image }}" alt="{{ post.username }}" class="post-avatar">
@@ -40,7 +40,7 @@
 
             <template class="comments-template">
                 {% for comment in post.comments %}
-                <div class="comment">
+                <div class="comment" data-comment-id="{{ comment.id }}" data-post-id="{{ post.id }}">
                     <span class="comment-text"><strong>{{ comment.username }}</strong>: {{ comment.text }}</span>
                     <div class="comment-actions">
                         <form method="post" action="{{ url_for('like_comment', post_id=post.id, comment_id=comment.id) }}" class="like-form">
@@ -53,6 +53,11 @@
                                 <span class="like-count">{{ comment.likes_count }}</span>
                             </button>
                         </form>
+                        {% if session['user_uid'] == comment.user_uid or session['user_uid'] == post.user_uid %}
+                        <form method="post" action="{{ url_for('delete_comment', post_id=post.id, comment_id=comment.id) }}" class="delete-comment-form">
+                            <button type="submit" class="delete-comment-btn">Delete</button>
+                        </form>
+                        {% endif %}
                     </div>
                 </div>
                 {% endfor %}
@@ -117,17 +122,20 @@ document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('.like-form').forEach(attachLikeHandler);
 
     function addCommentToDom(data) {
-        const commentHTML = `<div class="comment"><span class="comment-text"><strong>${data.username}</strong>: ${data.text}</span><div class="comment-actions"><form method="post" action="/like_comment/${data.post_id}/${data.comment_id}" class="like-form"><button type="submit" class="like-btn"><i class="fa-regular fa-paw"></i><span class="like-count">0</span></button></form></div></div>`;
+        const deleteHTML = `<form method="post" action="/delete_comment/${data.post_id}/${data.comment_id}" class="delete-comment-form"><button type="submit" class="delete-comment-btn">Delete</button></form>`;
+        const commentHTML = `<div class="comment" data-comment-id="${data.comment_id}" data-post-id="${data.post_id}"><span class="comment-text"><strong>${data.username}</strong>: ${data.text}</span><div class="comment-actions"><form method="post" action="/like_comment/${data.post_id}/${data.comment_id}" class="like-form"><button type="submit" class="like-btn"><i class="fa-regular fa-paw"></i><span class="like-count">0</span></button></form>${deleteHTML}</div></div>`;
         document.querySelectorAll(`[data-post-id="${data.post_id}"] .comments-template`).forEach(t => {
             t.insertAdjacentHTML('beforeend', commentHTML);
             const newForm = t.lastElementChild.querySelector('.like-form');
             if (newForm) attachLikeHandler(newForm);
+            attachDeleteToggle(t.lastElementChild);
         });
         const modalList = document.querySelector('.modal-comments .comments-list');
         if (modalList && document.getElementById('viewPostModal').style.display === 'flex') {
             modalList.insertAdjacentHTML('beforeend', commentHTML);
             const newForm = modalList.lastElementChild.querySelector('.like-form');
             if (newForm) attachLikeHandler(newForm);
+            attachDeleteToggle(modalList.lastElementChild);
         }
     }
 
