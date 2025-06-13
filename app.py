@@ -196,6 +196,7 @@ def view_profile_page(view_username):
                 c_data = c_doc.to_dict()
                 comments.append({
                     'id': c_doc.id,
+                    'user_uid': c_data.get('user_uid'),
                     'username': get_username(c_data.get('user_uid')),
                     'profile_image': get_profile_image(c_data.get('user_uid')),
                     'text': c_data.get('text'),
@@ -918,6 +919,7 @@ def add_comment(post_id):
         comment_data = {
             'comment_id': doc_ref.id,
             'post_id': post_id,
+            'user_uid': user_uid,
             'username': get_username(user_uid),
             'profile_image': get_profile_image(user_uid),
             'text': text
@@ -951,11 +953,14 @@ def like_comment(post_id, comment_id):
 @app.route('/delete_comment/<string:post_id>/<string:comment_id>', methods=['POST'])
 @login_required
 def delete_comment(post_id, comment_id):
-    """Allow a user to delete their own comment."""
+    """Allow a user to delete their own comment or one on their post."""
     user_uid = session.get('user_uid')
-    c_ref = db_firestore.collection('posts').document(post_id).collection('comments').document(comment_id)
+    post_ref = db_firestore.collection('posts').document(post_id)
+    c_ref = post_ref.collection('comments').document(comment_id)
     doc = c_ref.get()
-    if doc.exists and doc.to_dict().get('user_uid') == user_uid:
+    post_doc = post_ref.get()
+    post_owner = post_doc.to_dict().get('user_uid') if post_doc.exists else None
+    if doc.exists and (doc.to_dict().get('user_uid') == user_uid or user_uid == post_owner):
         c_ref.delete()
         flash('Comment deleted.', 'success')
     else:

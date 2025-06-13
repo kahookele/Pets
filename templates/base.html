@@ -412,6 +412,12 @@
             display: flex;
             gap: 8px;
         }
+        .delete-comment-form {
+            display: none;
+        }
+        .comment.show-delete .delete-comment-form {
+            display: inline;
+        }
 
         .add-comment-form {
             display: flex;
@@ -608,7 +614,7 @@
 
     {% block head_extra %}{% endblock %}
 </head>
-    <body>
+    <body data-current-user="{{ session['user_uid'] }}">
         <div class="app-container">
             <div class="sidebar-column glass-effect">
             {% include "sidebar.html" %}
@@ -780,6 +786,15 @@
                 });
             }
 
+            function attachDeleteToggle(comment) {
+                comment.addEventListener('click', function(e) {
+                    if (e.target.closest('form')) return;
+                    comment.classList.toggle('show-delete');
+                });
+            }
+
+            document.querySelectorAll('.comment').forEach(attachDeleteToggle);
+
             // View post modal
             const viewModal = document.getElementById('viewPostModal');
             const closeView = document.getElementById('closeViewPost');
@@ -794,6 +809,7 @@
                 if (list) {
                     list.innerHTML = comments;
                     list.querySelectorAll('.like-form').forEach(attachLikeHandler);
+                    list.querySelectorAll('.comment').forEach(attachDeleteToggle);
                 }
                 const form = viewModal.querySelector('.modal-comment-form');
                 if (form) form.action = `/add_comment/${postId}`;
